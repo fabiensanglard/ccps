@@ -1,0 +1,17 @@
+.DS_Store
+go.sum
+go.mod
+roms/
+pics/
+*.rom
+*.o
+*.obj
+*.sym
+*.map
+*.rel
+*.ihx
+.idea/
+*.xml
+*.lst
+*.noi
+out/
