@@ -1,4 +1,5 @@
-
+// https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html
+#define GFXRAM __attribute__ ((section ("gfxram")))  
 #define	BYTE		unsigned char
 #define	WORD		unsigned short
 #define	DWORD		unsigned int
