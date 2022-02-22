@@ -28,16 +28,16 @@ func outputSet(in []byte, o1 string, o2 string) {
 }
 
 func main() {
-	file, err := ioutil.ReadFile("game.rom")
+	file, err := ioutil.ReadFile("out/game.rom")
 
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	outputSet(file[ROM_SIZE*2*0:ROM_SIZE*2*0+ROM_SIZE*2], "sf2e_30g.11e", "sf2e_37g.11f")
-	outputSet(file[ROM_SIZE*2*1:ROM_SIZE*2*1+ROM_SIZE*2], "sf2e_31g.12e", "sf2e_38g.12f")
-	outputSet(file[ROM_SIZE*2*2:ROM_SIZE*2*2+ROM_SIZE*2], "sf2e_28g.9e", "sf2e_35g.9f")
-	outputSet(file[ROM_SIZE*2*3:ROM_SIZE*2*3+ROM_SIZE*2], "sf2_29b.10e", "sf2_36b.10f")
+	outputSet(file[ROM_SIZE*2*0:ROM_SIZE*2*0+ROM_SIZE*2], "out/sf2e_30g.11e", "out/sf2e_37g.11f")
+	outputSet(file[ROM_SIZE*2*1:ROM_SIZE*2*1+ROM_SIZE*2], "out/sf2e_31g.12e", "out/sf2e_38g.12f")
+	outputSet(file[ROM_SIZE*2*2:ROM_SIZE*2*2+ROM_SIZE*2], "out/sf2e_28g.9e", "out/sf2e_35g.9f")
+	outputSet(file[ROM_SIZE*2*3:ROM_SIZE*2*3+ROM_SIZE*2], "out/sf2_29b.10e", "out/sf2_36b.10f")
 
 }
