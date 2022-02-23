@@ -1,11 +1,15 @@
 // https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html
-#define GFXRAM __attribute__ ((section ("gfxram")))  
-#define	BYTE		unsigned char
-#define	WORD		unsigned short
-#define	DWORD		unsigned int
-#define	BOOL		unsigned int
+// https://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_chapter/ld_3.html
+// https://mcuoneclipse.com/2016/11/01/getting-the-memory-range-of-sections-with-gnu-linker-files/
+#define GFXRAM   __attribute__ ((section (".gfx_data")))  
+#define CPSA_REG __attribute__ ((section (".cpsa_reg")))  
+#define CPSB_REG __attribute__ ((section (".cpsb_reg")))  
+#define BYTE		unsigned char
+#define WORD		unsigned short
+#define DWORD		unsigned int
+#define BOOL		unsigned int
 
-#define	MAXSPRITES	8
+#define	MAXSPRITES	256
 
 typedef struct
 {
@@ -14,15 +18,17 @@ typedef struct
 	WORD	Tile;		// Sprite tile
 	WORD	Attribute;	// Sprite attribute
 	WORD	Used;		// Is this SpriteBlock used?
-} tagSpriteBlock;
+} Sprite;
 
-tagSpriteBlock	SpriteBlock[MAXSPRITES];
-
-int SpritesChanged = 1;
+GFXRAM Sprite sprites [MAXSPRITES]  =  {};
+CPSA_REG WORD  cpsa_reg[0x19] = {};
+CPSB_REG WORD cpsb_reg[0x19] = {};
 
 int vsyncCounter = 0;
 int soundCounter = 0;
 int someCounter = 0x6666;
+int uinVARRRRRR;
+const int mYcOnStT = 1;
 
 void onVSync() {
    vsyncCounter++;
