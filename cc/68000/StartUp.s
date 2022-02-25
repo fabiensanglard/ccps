@@ -33,7 +33,8 @@ VBlank:
 
 _start:
 	* Set stack pointer
-	move.l	#0xFFF000, sp
+	* No use, since done in init vector
+	* move.l	#0xFFF000, sp 
 
 
 	* Initialize BSS section
