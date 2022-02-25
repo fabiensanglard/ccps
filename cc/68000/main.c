@@ -51,13 +51,27 @@ void onVSync() {
    // sf2 uses CPS_B_11 
    // https://github.com/mamedev/mame/blob/master/src/mame/video/cps1.cpp#L480
 
+    // Palette control
+   // bit 0: copy page 0 (sprites)
+   // bit 1: copy page 1 (scroll1)
+   // bit 2: copy page 2 (scroll2)
+   // bit 3: copy page 3 (scroll3)
+   // bit 4: copy page 4 (stars1)
+   // bit 5: copy page 5 (stars2)
+   cpsb_reg[0x30 / 2] =  1;
+
+   // Set palette base
 	cpsa_reg[0xa / 2] = (WORD)(((DWORD)palettes) >> 8);
    
+
+
    // Enable layers
-   cpsb_reg[0x13] = 0x3 << 6 ;//| 0x3 << 0xc; 
+   cpsb_reg[0x26 / 2] = 0x3 << 6 ;//| 0x3 << 0xc; 
    // sprite = 6, scroll1=8, scroll2=a, scroll3=c
    // cpsb_reg[0x13] = 0x12CE;
    // *((WORD*)0x00800166) = 0x12CE;
+
+
 
    
    int i=0;
@@ -67,9 +81,9 @@ void onVSync() {
     s = &sprites[i];
     s->x = 100;
     s->y = 100;
-    s->tile = 5;
+    s->tile = 	uinVARRRRRR;
 
-    s->attributes = 2 ;//| 0x3 << 12 | 0x3 << 8; // Use palette 1, dim 12,8
+    s->attributes = 2 |  0x3 << 12 | 0x3 << 8; // Use palette 1, dim 12,8
     }
 
    sprites[i].attributes	= 0xFF00; // Last sprite marker
@@ -103,5 +117,6 @@ int run() {
      	  palettes[i].colors[j] = 0xF << 12 | 0xF << 8 | 0x3;
      }
    }
+
 	return 0;
 }
