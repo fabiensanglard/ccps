@@ -13,30 +13,23 @@
 	dc.l	Default, Default, Default, Default, Default, Default, Default, Default
 	dc.l	Default, Default, Default, Default, Default, Default, Default, Default
 
-	.align	4
-
+.align	4
 Default:
 	rte
-	.align	4
 
-
+.align	4
 * Dummy atexit (does nothing for now)
 atexit:
 	moveq	#0, d0
 	rts
 
-	.align	4
-
+.align	4
 VBlank:
     jsr onVSync
 	rte
 
+.align	4
 _start:
-	* Set stack pointer
-	* No use, since done in init vector
-	* move.l	#0xFFF000, sp 
-
-
 	* Initialize BSS section
 	move.l	#_end, d0
 	sub.l	#__bss_start, d0
@@ -53,5 +46,4 @@ _start:
 EndLoop:
 	bra.s	EndLoop
 
-	.align	4
 

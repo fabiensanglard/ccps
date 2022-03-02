@@ -1,5 +1,5 @@
-char *OKI = (char*)0xF002;
-char *LATCH1 = (char*)0xF008;
+__at (0xF002) char OKI;
+__at (0xF008) char LATCH1;
 #define NO_OP 0xFF
 
 void interrupt() {
@@ -18,7 +18,7 @@ void main() {
 	  //while(interruptCounter == mainCounter){
 	  //}
 	  //mainCounter++;
-      latch = *LATCH1;
+      latch = LATCH1;
 
 	  // Tick one
 	  if (lastLatch == latch) {
@@ -30,7 +30,7 @@ void main() {
 		continue;
 	  }
 
-	  *OKI = 0x80 | latch;
-      *OKI = 0x81;
+	  OKI = 0x80 | latch;
+    OKI = 0x81;
    }
 }
