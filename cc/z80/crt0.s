@@ -44,8 +44,6 @@ main:
    .area _BSS
    .area _HEAP
 
-   .area _CODE
-
 _exit:
    jp main
 
