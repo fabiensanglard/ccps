@@ -43,15 +43,24 @@ int someCounter = 0x6666;
 int uinVARRRRRR;
 const int mYcOnStT = 1;
 
-void onVSync() {
 
-   // final fight uses CPS_B_04
-   // https://github.com/mamedev/mame/blob/master/src/mame/video/cps1.cpp#L478
+static const Palette ryu = {0xF111 ,0xFFD9,0xFFB8,0xFE97,0xFC86,0xF965,0xF643,0xFb00,
+   	                   0xFfff,0xFeec,0xFdca,0xFba8,0xFa87,0xF765,0xFf00,0x0000};
 
-   // sf2 uses CPS_B_11 
-   // https://github.com/mamedev/mame/blob/master/src/mame/video/cps1.cpp#L480
+void setPalette(int page, int paletteID, const Palette* palette) {
 
-    // Palette control
+   for (int j = 0 ; j < 16 ; j++) {
+  	  palettes[paletteID].colors[j] = (*palette).colors[j];
+   }
+
+   // Set all palettes to red
+   for(int i = 0 ; i < 32 ; i++) {
+      for (int j = 0 ; j < 16 ; j++) {
+      	  palettes[i].colors[j] = (*palette).colors[j];
+      }
+    }
+
+	// Palette control
    // bit 0: copy page 0 (sprites)
    // bit 1: copy page 1 (scroll1)
    // bit 2: copy page 2 (scroll2)
@@ -62,6 +71,20 @@ void onVSync() {
 
    // Set palette base
 	cpsa_reg[0xa / 2] = (WORD)(((DWORD)palettes) >> 8);
+}
+
+
+void onVSync() {
+
+   // final fight uses CPS_B_04
+   // https://github.com/mamedev/mame/blob/master/src/mame/video/cps1.cpp#L478
+
+   // sf2 uses CPS_B_11 
+   // https://github.com/mamedev/mame/blob/master/src/mame/video/cps1.cpp#L480
+
+
+   setPalette(0, 2, &ryu);
+
    
 
 
@@ -79,11 +102,11 @@ void onVSync() {
 
     for (i = 0 ; i < 4 ; i++) {
     s = &sprites[i];
-    s->x = 100;
+    s->x = 220;
     s->y = 100;
-    s->tile = 	uinVARRRRRR;
+    s->tile = 	4;
 
-    s->attributes = 2 |  0x3 << 12 | 0x3 << 8; // Use palette 1, dim 12,8
+    s->attributes = 2 |  0x5 << 12 | 0x3 << 8; // Use palette 1, dim 12,8
     }
 
    sprites[i].attributes	= 0xFF00; // Last sprite marker
@@ -106,17 +129,10 @@ void onVSync() {
 }
 
 
-
 int run() {
 
-	soundCounter = 0;
-
-   // Set all palettes to red
-   for(int i = 0 ; i < 32 ; i++) {
-     for (int j = 0 ; j < 16 ; j++) {
-     	  palettes[i].colors[j] = 0xF << 12 | 0xF << 8 | 0x3;
-     }
-   }
+   
+   
 
 	return 0;
 }

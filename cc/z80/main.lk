@@ -2,7 +2,6 @@
 -i out/main.ihx
 -b _CODE = 0x0200
 -b _DATA = 0xd000
--k /usr/bin/../share/sdcc/lib/z80
 -k /usr/share/sdcc/lib/z80
 -l z80
 out/crt0.rel
