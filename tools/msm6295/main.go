@@ -35,32 +35,33 @@ func writeAddress(addr Address, dst [ADD_STORAGE_SIZE]byte) {
 
 func readAddress(src []byte) *Address {
 	add := Address{}
-	add.start = uint32(src[0])  << 16
-	add.start |= uint32(src[1]) <<  8
-	add.start |= uint32(src[2]) <<  0
-	add.end = uint32(src[3])  << 16
-	add.end |= uint32(src[4]) <<  8
-	add.end |= uint32(src[5]) <<  0
-    return &add
+	add.start = uint32(src[0]) << 16
+	add.start |= uint32(src[1]) << 8
+	add.start |= uint32(src[2]) << 0
+	add.end = uint32(src[3]) << 16
+	add.end |= uint32(src[4]) << 8
+	add.end |= uint32(src[5]) << 0
+	return &add
 }
 
 func dumpMsm6295ROM(rom []byte) {
 	totalSize := 0
-   for i:= 1; i <= NUM_PHRASES ; i++ {
-	   addrSlice := rom[i * ADD_STORAGE_SIZE : i * ADD_STORAGE_SIZE + ADD_STORAGE_SIZE]
-	   addr := readAddress(addrSlice)
-	   if addr.len() == 0  {
-		   continue
-	   }
-	   fmt.Printf("%v\n",addr)
-	   phrase := rom[addr.start : addr.end]
-	   println("Found phrase ",i, "at [", addr.start, "-", addr.end, "] size=", len(phrase), "duration =", len(phrase) * 2000 / 7575 )
-	   totalSize += len(phrase)
-	   filename := fmt.Sprintf("samples/s%d.oki", i)
-	   ioutil.WriteFile(filename, phrase, 0777)
-   }
-   println("Total size=", totalSize)
-   println("Total duration=", totalSize * 2000 / 7575 )
+	for i := 1; i <= NUM_PHRASES; i++ {
+		addrSlice := rom[i*ADD_STORAGE_SIZE : i*ADD_STORAGE_SIZE+ADD_STORAGE_SIZE]
+		addr := readAddress(addrSlice)
+		if addr.len() == 0 {
+			continue
+		}
+		//fmt.Printf("%v\n", addr)
+		fmt.Println("#{addr}\n")
+		phrase := rom[addr.start:addr.end]
+		println("Found phrase ", i, "at [", addr.start, "-", addr.end, "] size=", len(phrase), "duration =", len(phrase)*2000/7575)
+		totalSize += len(phrase)
+		filename := fmt.Sprintf("samples/s%d.oki", i)
+		ioutil.WriteFile(filename, phrase, 0777)
+	}
+	println("Total size=", totalSize)
+	println("Total duration=", totalSize*2000/7575)
 }
 
 // Convert WAV to RAW PCM
@@ -75,13 +76,13 @@ func dumpMsm6295ROM(rom []byte) {
 
 func main() {
 	fmt.Println("msm6295 is starting...")
-	os.MkdirAll("samples",0777)
+	os.MkdirAll("samples", 0777)
 
-	args := []string{"sf2_18.11c", "sf2_19.12c"}//os.Args[1:]
+	args := []string{"sf2_18.11c", "sf2_19.12c"} //os.Args[1:]
 	files := make([][]byte, len(args))
 
-	totalSize := 0;
-	for i:= 0 ; i < len(files) ; i++ {
+	totalSize := 0
+	for i := 0; i < len(files); i++ {
 		dat, err := ioutil.ReadFile(args[i])
 		if err != nil {
 			panic(err)
@@ -95,12 +96,11 @@ func main() {
 	rom := make([]byte, totalSize)
 	fmt.Printf("Rom size=0x%X\n", len(rom))
 
-
-	for i, file := range files{
-		copy(rom[i * romSize :], file)
+	for i, file := range files {
+		copy(rom[i*romSize:], file)
 	}
 
- 	dumpMsm6295ROM(rom)
+	dumpMsm6295ROM(rom)
 
 	//rom := make([]byte, 0x40000)
 	//

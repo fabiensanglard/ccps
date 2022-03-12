@@ -1,4 +1,4 @@
-package main
+package ccz80
 
 import (
 	"fmt"
