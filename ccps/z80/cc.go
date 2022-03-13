@@ -7,8 +7,10 @@ const as = "sdasz80"
 const linker = "sdldz80"
 const crt0 = "crt0.s"
 
-func run() {
-
+func Build() []string {
+	var romsNames []string
+	romsNames = append(romsNames, "myrom.rom")
+	return romsNames
 }
 
 func assemble(srcs string) (error, string) {
@@ -20,7 +22,7 @@ func assemble(srcs string) (error, string) {
 	return nil, ""
 }
 
-func compile(srcs[] string) (error, []string) {
+func compile(srcs []string) (error, []string) {
 	var outputs []string
 
 	for _, src := range srcs {
