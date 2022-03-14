@@ -1,27 +1,38 @@
 package boards
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 type CpsBRegisters struct {
-   palette int
+	palette int
 }
 
-type GFXROM struct {
-
+type ROMSet struct {
+	Size      int64
+	Filenames []string
 }
 
-type Board struct{
-	cpsBReg CpsBRegisters
-	gfx GFXROM
+type Board struct {
+	CpsBReg CpsBRegisters
+	Gfx     ROMSet
+	Z80     ROMSet
+	M68k    ROMSet
+	Oki     ROMSet
 }
 
-func Get(name string) Board {
-	if (name == "sf2") {
+func Get(name string) *Board {
+	if name == "sf2" {
 		return sf2Board()
 	}
-	panic(fmt.Sprintf("Unknown board '%s'", name))
+	println(fmt.Sprintln("Unknown board '%s'", name))
+	os.Exit(1)
+	return &Board{}
 }
 
-func sf2Board() Board {
-  return Board{}
+var boards []Board
+
+func sf2Board() *Board {
+	return &Board{}
 }
