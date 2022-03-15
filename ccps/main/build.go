@@ -22,9 +22,15 @@ func build([]string) {
 	}
 
 	board := boards.Get(*target)
+	
 	oki.Build(*verbose, *dryRun, board)
 	mus.Build(*verbose, *dryRun, board)
+
 	gfx.Build(*verbose, *dryRun, board)
+
 	z80.Build(*verbose, *dryRun, board)
+	// TODO: Split ROM
+
 	m68k.Build(*verbose, *dryRun, board)
+	// TODO: Split ROM
 }

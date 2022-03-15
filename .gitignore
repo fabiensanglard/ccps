@@ -16,3 +16,4 @@ pics/
 *.asm
 out/
 ccps/main/ccps
+.tmp

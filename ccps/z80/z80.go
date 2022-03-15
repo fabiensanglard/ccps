@@ -2,6 +2,7 @@ package z80
 
 import (
 	"bufio"
+	"bytes"
 	"ccps/boards"
 	"fmt"
 	"io/ioutil"
@@ -28,6 +29,22 @@ const ext_c = ".c"
 var verbose bool
 var dryRun bool
 var board boards.Board
+
+func run(c string) {
+	args := strings.Split(c, " ")
+	cmd := exec.Command(args[0], args[1:]...)
+
+	var out bytes.Buffer
+	cmd.Stderr = &out
+
+	err := cmd.Run()
+	if err != nil {
+		println(fmt.Sprintf("Error running cmd '%s'", c))
+		println(out.String())
+		os.Exit(1)
+	}
+
+}
 
 func Build(v bool, dr bool, b *boards.Board) string {
 	verbose = v
@@ -58,7 +75,7 @@ func Build(v bool, dr bool, b *boards.Board) string {
 		os.Exit(1)
 	}
 
-	obj := objiffy(linked)
+	obj := binarize(linked)
 	rom := pad(obj)
 
 	return rom
@@ -66,17 +83,20 @@ func Build(v bool, dr bool, b *boards.Board) string {
 
 func pad(input string) string {
 
+	// Get the size.
 	fi, err := os.Stat(input)
 	if err != nil {
 		println(fmt.Sprintf("Error stating '%s': %v", input, err))
 		os.Exit(1)
 	}
-	// get the size
+
+	// Make sure it is not too big.
 	if fi.Size() > board.Z80.Size {
-		fmt.Printf("Z-80 RO< is too big (%d bytes) max=%d bytes", fi.Size(), board.Z80.Size)
+		fmt.Printf("Z-80 ROM is too big (%d bytes) max=%d bytes", fi.Size(), board.Z80.Size)
 	}
 
-	cmd := fmt.Sprintf("dd if=/dev/zero of=%d bs=1 count=1 seek=65536", input)
+	cmd := fmt.Sprintf("dd if=/dev/zero of=%s bs=1 count=1 seek=65536", input)
+	run(cmd)
 
 	if verbose {
 		println(cmd)
@@ -84,9 +104,10 @@ func pad(input string) string {
 	return ""
 }
 
-func objiffy(input string) string {
+func binarize(input string) string {
 	output := objectDir + "z80.rom"
 	cmd := fmt.Sprintf("%s --input-target=ihex --output-target=binary %s %s", objcopy, input, output)
+	run(cmd)
 
 	if verbose {
 		println(cmd)
@@ -131,7 +152,8 @@ func assemble() (error, []string) {
 
 	files, err := ioutil.ReadDir(srcsPath)
 	if err != nil {
-		log.Fatal(err)
+		println(fmt.Sprintf("Unable to read dir '%s'", srcsPath))
+		os.Exit(1)
 	}
 
 	//TODO make sure crt0.s is first so areas are properly sorted.
@@ -152,6 +174,7 @@ func assemble() (error, []string) {
 			as,
 			output,
 			srcsPath+src.Name())
+		run(cmd)
 
 		if verbose {
 			fmt.Println(cmd)
@@ -187,6 +210,7 @@ func compile() (error, []string) {
 			cc,
 			output,
 			input)
+		run(cmd)
 
 		if verbose {
 			fmt.Println(cmd)
@@ -211,14 +235,11 @@ func link(rels []string) (error, string) {
 	linkerScript = append(linkerScript, "-b _DATA = 0xd000")
 	linkerScript = append(linkerScript, "-k /usr/share/sdcc/lib/z80")
 	linkerScript = append(linkerScript, "-l z80")
-	linkerScript = append(linkerScript, "")
 
 	for _, rel := range rels {
 		linkerScript = append(linkerScript, fmt.Sprintf("%s", rel))
 	}
 
-	linkerScript = append(linkerScript, "")
-	linkerScript = append(linkerScript, "-e")
 	linkerScript = append(linkerScript, "")
 
 	// Write linker file
@@ -240,7 +261,8 @@ func link(rels []string) (error, string) {
 	}
 	datawriter.Flush()
 
-	cmd := "sdldz80 -nf " + output
+	cmd := "sdldz80 -nf " + lkPath
+	run(cmd)
 
 	if verbose {
 		println(cmd)

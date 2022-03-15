@@ -12,20 +12,17 @@ const cmdClean = "clean"
 
 var allCmds = []string{cmdBuild, cmdInstall, cmdHelloWorld, cmdClean}
 
+func rm(dir string) {
+	err := os.RemoveAll(dir)
+	if err != nil {
+		println(fmt.Sprintf("Cannot delete '%s' folder: %v", dir, err))
+		os.Exit(1)
+	}
+	println("rm -fr", dir)
+}
 func clean() {
-	err := os.RemoveAll(".tmp")
-	if err != nil {
-		println(fmt.Sprintf("Cannot delete .tmp folder: %v", err))
-		os.Exit(1)
-	}
-	println("rm -fr .tmp")
-
-	err = os.RemoveAll("out")
-	if err != nil {
-		println(fmt.Sprintf("Cannot delete .tmp folder: %v", err))
-		os.Exit(1)
-	}
-	println("rm -fr out")
+	rm(".tmp")
+	rm("out")
 }
 
 func main() {

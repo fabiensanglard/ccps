@@ -34,5 +34,8 @@ func Get(name string) *Board {
 var boards []Board
 
 func sf2Board() *Board {
-	return &Board{}
+	sf2 := Board{}
+	sf2.Z80.Size = 65536
+	sf2.M68k.Size = 1048576
+	return &sf2
 }
