@@ -95,13 +95,13 @@ func pad(input string) string {
 		fmt.Printf("Z-80 ROM is too big (%d bytes) max=%d bytes", fi.Size(), board.Z80.Size)
 	}
 
-	cmd := fmt.Sprintf("dd if=/dev/zero of=%s bs=1 count=1 seek=65536", input)
+	cmd := fmt.Sprintf("dd if=/dev/zero of=%s bs=1 count=1 seek=65535", input)
 	run(cmd)
 
 	if verbose {
 		println(cmd)
 	}
-	return ""
+	return input
 }
 
 func binarize(input string) string {

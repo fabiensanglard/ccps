@@ -22,15 +22,24 @@ func build([]string) {
 	}
 
 	board := boards.Get(*target)
-	
+
+	// Create output folder
+	outputDir := "out/"
+	err := os.MkdirAll(outputDir, os.ModePerm)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("Unable to create dir '%s'", outputDir))
+		os.Exit(1)
+	}
+
+	// OKI generates oki.rom and oki.h
 	oki.Build(*verbose, *dryRun, board)
+	// MUS generates mus.c
 	mus.Build(*verbose, *dryRun, board)
+	z80Rom := z80.Build(*verbose, *dryRun, board)
+	board.Z80.Epromer(z80Rom, "out/")
 
 	gfx.Build(*verbose, *dryRun, board)
-
-	z80.Build(*verbose, *dryRun, board)
-	// TODO: Split ROM
-
-	m68k.Build(*verbose, *dryRun, board)
-	// TODO: Split ROM
+	// Needs oki.h, mus.c, gfx.c
+	m68kRom := m68k.Build(*verbose, *dryRun, board)
+	board.M68k.Epromer(m68kRom, "out/")
 }
