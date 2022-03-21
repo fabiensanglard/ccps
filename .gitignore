@@ -9,8 +9,6 @@ pics/
 *.map
 *.rel
 *.ihx
-.idea/
-*.xml
 *.lst
 *.noi
 *.asm

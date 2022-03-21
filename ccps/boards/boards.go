@@ -68,7 +68,7 @@ func cp(src string, dst string) {
 }
 
 func sf2GFXEpromer(romPath string, outDir string) {
-	_, err := ioutil.ReadFile(romPath)
+	gfxrom, err := ioutil.ReadFile(romPath)
 
 	if err != nil {
 		fmt.Println(fmt.Sprintf("Cannot open GFX ROM '%s'", romPath))
@@ -77,31 +77,25 @@ func sf2GFXEpromer(romPath string, outDir string) {
 
 	// Split it
 	const BANK_SIZE = 0x200000
-	//bank0 := gfxrom[0*BANK_SIZE : 0*BANK_SIZE+BANK_SIZE]
-	//bank1 := gfxrom[1*BANK_SIZE : 1*BANK_SIZE+BANK_SIZE]
-	//bank2 := gfxrom[2*BANK_SIZE : 2*BANK_SIZE+BANK_SIZE]
+	bank0 := gfxrom[0*BANK_SIZE : 0*BANK_SIZE+BANK_SIZE]
+	bank1 := gfxrom[1*BANK_SIZE : 1*BANK_SIZE+BANK_SIZE]
+	bank2 := gfxrom[2*BANK_SIZE : 2*BANK_SIZE+BANK_SIZE]
 
 	const ROM_SIZE = 0x80000
+	writeToFile(bank0[0:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_06.bin")
+	writeToFile(bank0[2:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_08.bin")
+	writeToFile(bank0[4:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_05.bin")
+	writeToFile(bank0[6:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_07.bin")
 
-	//writeToFile(bank0[0:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_06.bin")
-	//writeToFile(bank0[2:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_08.bin")
-	//writeToFile(bank0[4:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_05.bin")
-	//writeToFile(bank0[6:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_07.bin")
+	writeToFile(bank1[0:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_15.bin")
+	writeToFile(bank1[2:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_17.bin")
+	writeToFile(bank1[4:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_14.bin")
+	writeToFile(bank1[6:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_16.bin")
 
-	//{"sf2_06.bin", "b9194fb337b30502c1c9501cd6c64ae4035544d4", 2, 0, 0x80000, 0x0000000, 8},
-	//{"sf2_08.bin", "3759b851ac0904ec79cbb67a2264d384b6f2f9f9", 2, 0, 0x80000, 0x0000002, 8},
-	//{"sf2_05.bin", "520840d727161cf09ca784919fa37bc9b54cc3ce", 2, 0, 0x80000, 0x0000004, 8},
-	//{"sf2_07.bin", "2360cff890551f76775739e2d6563858bff80e41", 2, 0, 0x80000, 0x0000006, 8},
-
-	//{"sf2_15.bin", "357c2275af9133fd0bd6fbb1fa9ad5e0b490b3a2", 2, 0, 0x80000, 0x200000, 8},
-	//{"sf2_17.bin", "baa92b91cf616bc9e2a8a66adc777ffbf962a51b", 2, 0, 0x80000, 0x200002, 8},
-	//{"sf2_14.bin", "2eea16673e60ba7a10bd4d8f6c217bb2441a5b0e", 2, 0, 0x80000, 0x200004, 8},
-	//{"sf2_16.bin", "f787aab98668d4c2c54fc4ba677c0cb808e4f31e", 2, 0, 0x80000, 0x200006, 8},
-
-	//{"sf2_25.bin", "5669b845f624b10e7be56bfc89b76592258ce48b", 2, 0, 0x80000, 0x400000, 8},
-	//{"sf2_27.bin", "9af9df0826988872662753e9717c48d46f2974b0", 2, 0, 0x80000, 0x400002, 8},
-	//{"sf2_24.bin", "a6a7f4725e52678cbd8d557285c01cdccb2c2602", 2, 0, 0x80000, 0x400004, 8},
-	//{"sf2_26.bin", "f9a92d614e8877d648449de2612fc8b43c85e4c2", 2, 0, 0x80000, 0x400006, 8},
+	writeToFile(bank2[0:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_25.bin")
+	writeToFile(bank2[2:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_27.bin")
+	writeToFile(bank2[4:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_24.bin")
+	writeToFile(bank2[6:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_26.bin")
 }
 
 func sf2Z80EPromer(rom string, outputDir string) {
@@ -127,11 +121,21 @@ func sf2M68kEPromer(rom string, outputDir string) {
 	writeToFile(r[3*ROM_SIZE+1:], 1, 2, ROM_SIZE, outputDir+"sf2_36b.10f")
 }
 
+// Generate a rom of size [num]. To do so, read from src [rom], batches of [size]
+// bytes and skip [skip] bytes on each batch.
 func writeToFile(rom []byte, size int, skip int, num int, filename string) {
-	var eprom = make([]byte, num)
 
-	for i := 0; i < num; i++ {
-		eprom[i] = rom[i*skip]
+	if num%size != 0 {
+		println("Bad writeToFile. Size", num, "is not evenly divisible by ", size, ".")
+		os.Exit(1)
+	}
+
+	var eprom = make([]byte, num)
+	epromCursor := 0
+	for romCursor := 0; romCursor < num/size; {
+		copy(eprom[romCursor:romCursor+size], rom[epromCursor:epromCursor+size])
+		romCursor += size
+		epromCursor += skip
 	}
 	err := ioutil.WriteFile(filename, eprom, 0644)
 	if err != nil {
