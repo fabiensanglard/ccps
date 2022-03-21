@@ -38,7 +38,9 @@ func build([]string) {
 	z80Rom := z80.Build(*verbose, *dryRun, board)
 	board.Z80.Epromer(z80Rom, "out/")
 
-	gfx.Build(*verbose, *dryRun, board)
+	gfxromPath := gfx.Build(*verbose, *dryRun, board)
+	board.GFX.Epromer(gfxromPath, "out/")
+	
 	// Needs oki.h, mus.c, gfx.c
 	m68kRom := m68k.Build(*verbose, *dryRun, board)
 	board.M68k.Epromer(m68kRom, "out/")

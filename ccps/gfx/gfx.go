@@ -2,6 +2,7 @@ package gfx
 
 import (
 	"ccps/boards"
+	"fmt"
 	"image"
 	_ "image/png"
 	"io/ioutil"
@@ -15,6 +16,8 @@ import (
 
 var verbose bool
 var board boards.Board
+
+const outDir = ".tmp/gfx/"
 
 type gfxRegionType int
 
@@ -79,22 +82,41 @@ func Build(v bool, dryRun bool, b *boards.Board) string {
 		},
 	}
 
+	// TODO: Check if there is nothing to do
+
 	var sizes [4]int
 	for _, region := range regions {
 		size := region.end - region.start
 		sizes[region.sort] += size
 	}
 
+	gfxRom := make([]byte, board.GFX.Size)
+	cursor := 0
 	for i, path := range sortPath {
-		createGFX(path, sizes[i], gfxRegionType(i))
-
-		// Add sort rom to "everything" GFX ROM
+		// For every type of GFX assets (OBJ, SCR1, SCR2, SCR3)
+		// create a "sort rom".
+		rom := createGFX(path, sizes[i], gfxRegionType(i))
+		// Add "sort rom" to "everything" GFX ROM
+		copy(gfxRom[cursor:], rom)
+		cursor += len(rom)
 	}
 
-	// Write everything rom to storage
+	// Write gfxrom to storage
+	// write the whole body at once
+	err := os.MkdirAll(outDir, os.ModePerm)
+	if err != nil {
+		fmt.Println("Unable to create dir", outDir)
+		os.Exit(1)
+	}
+	romPath := outDir + "gfx.rom"
+	err = ioutil.WriteFile(romPath, gfxRom, 0644)
+	if err != nil {
+		fmt.Println("Unable to write GFX rom to", romPath)
+		os.Exit(1)
+	}
 
 	// Return everything rom path
-	return ""
+	return romPath
 }
 
 func getTileDim(sort gfxRegionType) int {
@@ -221,6 +243,8 @@ func addGFX(src string, rom []byte, tileDim int, allocator *allocator) {
 }
 
 func adjustRectToTile(img *image.Paletted, tileDim int) {
+
+	// Round up to next multiple of tileDim
 	diffX := (tileDim - img.Rect.Max.X%tileDim) % tileDim
 	diffY := (tileDim - img.Rect.Max.Y%tileDim) % tileDim
 
