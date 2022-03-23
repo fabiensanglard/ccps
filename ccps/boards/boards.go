@@ -18,11 +18,12 @@ type ROMSet struct {
 }
 
 type Board struct {
-	CpsBReg CpsBRegisters
-	GFX     ROMSet
-	Z80     ROMSet
-	M68k    ROMSet
-	Oki     ROMSet
+	CpsBReg  CpsBRegisters
+	GFXSizes [4]int
+	GFX      ROMSet
+	Z80      ROMSet
+	M68k     ROMSet
+	Oki      ROMSet
 }
 
 func Get(name string) *Board {
@@ -46,6 +47,8 @@ func sf2Board() *Board {
 
 	sf2.GFX.Size = 6291456
 	sf2.GFX.Epromer = sf2GFXEpromer
+
+	sf2.GFXSizes = [4]int{4_718_592, 0, 0, 0}
 	return &sf2
 }
 
@@ -82,20 +85,21 @@ func sf2GFXEpromer(romPath string, outDir string) {
 	bank2 := gfxrom[2*BANK_SIZE : 2*BANK_SIZE+BANK_SIZE]
 
 	const ROM_SIZE = 0x80000
-	writeToFile(bank0[0:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_06.bin")
-	writeToFile(bank0[2:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_08.bin")
-	writeToFile(bank0[4:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_05.bin")
-	writeToFile(bank0[6:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_07.bin")
 
-	writeToFile(bank1[0:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_15.bin")
-	writeToFile(bank1[2:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_17.bin")
-	writeToFile(bank1[4:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_14.bin")
-	writeToFile(bank1[6:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_16.bin")
+	writeToFile(bank0[0:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-5m.4a")
+	writeToFile(bank0[2:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-7m.6a")
+	writeToFile(bank0[4:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-1m.3a")
+	writeToFile(bank0[6:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-3m.5a")
 
-	writeToFile(bank2[0:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_25.bin")
-	writeToFile(bank2[2:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_27.bin")
-	writeToFile(bank2[4:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_24.bin")
-	writeToFile(bank2[6:0x80000], 2, 8, ROM_SIZE, outDir+"sf2_26.bin")
+	writeToFile(bank1[0:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-6m.4c")
+	writeToFile(bank1[2:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-8m.6c")
+	writeToFile(bank1[4:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-2m.3c")
+	writeToFile(bank1[6:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-4m.5c")
+
+	writeToFile(bank2[0:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-13m.4d")
+	writeToFile(bank2[2:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-15m.6d")
+	writeToFile(bank2[4:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-9m.3d")
+	writeToFile(bank2[6:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-11m.5d")
 }
 
 func sf2Z80EPromer(rom string, outputDir string) {
