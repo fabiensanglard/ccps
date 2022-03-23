@@ -11,13 +11,17 @@ import (
 func install(args []string) {
 	fs := flag.NewFlagSet("install", flag.ExitOnError)
 	v := fs.Bool("v", false, "Verbose mode")
-	dirFlag := fs.String("o", "", "Target directory")
+	dir := fs.String("d", "", "Destination directory")
 	if err := fs.Parse(args); err != nil {
 		//println(fmt.Sprintf("Cmd parsing error '%s'", err))
 		os.Exit(1)
 	}
 
-	outDir := *dirFlag
+	outDir := *dir
+	if len(outDir) == 0 {
+		println("Usage: ccps install -d dstDirectory")
+		os.Exit(1)
+	}
 	verbose := *v
 	if !strings.HasSuffix(outDir, "/") {
 		outDir = outDir + "/"
