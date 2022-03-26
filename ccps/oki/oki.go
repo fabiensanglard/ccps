@@ -2,13 +2,12 @@ package oki
 
 import (
 	"ccps/boards"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 )
 
-func Build(v bool, dryRun bool, board *boards.Board) string {
+func Build(v bool, dryRun bool, board *boards.Board) []byte {
 	verbose := v
 
 	wavDir := "sfx/"
@@ -18,6 +17,7 @@ func Build(v bool, dryRun bool, board *boards.Board) string {
 		os.Exit(1)
 	}
 
+	okiRom := NewOkiROM()
 	for _, file := range files {
 		if file.IsDir() {
 			continue
@@ -44,19 +44,8 @@ func Build(v bool, dryRun bool, board *boards.Board) string {
 		// soxi sfx/moldova.wav
 		// mpg321 -w moldova.wav moldova.mp3
 		adpcm := toADPCM(wav.data)
-		println(len(adpcm))
+		okiRom.AddPhrase(adpcm)
 	}
 
-	outDir := "out/"
-	rom := make([]byte, board.Oki.Size)
-
-	romPath := outDir + "gfx.rom"
-	err = ioutil.WriteFile(romPath, rom, 0644)
-	if err != nil {
-		fmt.Println("Unable to write Oki rom to", romPath)
-		os.Exit(1)
-	}
-
-	// Return everything rom path
-	return romPath
+	return okiRom.genROM()
 }
