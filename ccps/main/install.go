@@ -19,7 +19,7 @@ func install(args []string) {
 
 	outDir := *dir
 	if len(outDir) == 0 {
-		println("Usage: ccps install -d dstDirectory")
+		println("Usage: ccps install -dstDirectory")
 		os.Exit(1)
 	}
 	verbose := *v

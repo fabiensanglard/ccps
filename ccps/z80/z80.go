@@ -93,6 +93,7 @@ func pad(input string) string {
 	// Make sure it is not too big.
 	if fi.Size() > board.Z80.Size {
 		fmt.Printf("Z-80 ROM is too big (%d bytes) max=%d bytes", fi.Size(), board.Z80.Size)
+		os.Exit(1)
 	}
 
 	cmd := fmt.Sprintf("dd if=/dev/zero of=%s bs=1 count=1 seek=65535", input)

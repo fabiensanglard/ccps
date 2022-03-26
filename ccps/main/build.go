@@ -32,7 +32,9 @@ func build([]string) {
 	}
 
 	// OKI generates oki.rom and oki.h
-	oki.Build(*verbose, *dryRun, board)
+	okyRom := oki.Build(*verbose, *dryRun, board)
+	board.Oki.Epromer(okyRom, "out/")
+
 	// MUS generates mus.c
 	mus.Build(*verbose, *dryRun, board)
 	z80Rom := z80.Build(*verbose, *dryRun, board)
@@ -40,7 +42,7 @@ func build([]string) {
 
 	gfxromPath := gfx.Build(*verbose, *dryRun, board)
 	board.GFX.Epromer(gfxromPath, "out/")
-	
+
 	// Needs oki.h, mus.c, gfx.c
 	m68kRom := m68k.Build(*verbose, *dryRun, board)
 	board.M68k.Epromer(m68kRom, "out/")

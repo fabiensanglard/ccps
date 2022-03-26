@@ -47,8 +47,11 @@ func sf2Board() *Board {
 
 	sf2.GFX.Size = 6291456
 	sf2.GFX.Epromer = sf2GFXEpromer
-
 	sf2.GFXSizes = [4]int{4_718_592, 0, 0, 0}
+
+	sf2.Oki.Size = 0x40000
+	sf2.Oki.Epromer = okiEpromer
+
 	return &sf2
 }
 
@@ -68,6 +71,31 @@ func cp(src string, dst string) {
 		fmt.Println(fmt.Sprintf("cp error: Cannot dst: '%s'", dst))
 		os.Exit(1)
 	}
+}
+
+func okiEpromer(romPath string, outDir string) {
+	rom, err := ioutil.ReadFile(romPath)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("Cannot open GFX ROM '%s'", romPath))
+		os.Exit(1)
+	}
+
+	const romSize = 0x20000
+	rom1 := rom[0:romSize]
+	rom2 := rom[romSize:]
+
+	err = ioutil.WriteFile(outDir+"sf2_18.11c", rom1, 0644)
+	if err != nil {
+		fmt.Println("Unable to write Oki EPROM 'sf2_18.11c'")
+		os.Exit(1)
+	}
+
+	err = ioutil.WriteFile(outDir+"sf2_19.12c", rom2, 0644)
+	if err != nil {
+		fmt.Println("Unable to write Oki EPROM 'sf2_19.12c'")
+		os.Exit(1)
+	}
+
 }
 
 func sf2GFXEpromer(romPath string, outDir string) {

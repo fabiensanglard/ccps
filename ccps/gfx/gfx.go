@@ -6,7 +6,6 @@ import (
 	"image"
 	_ "image/png"
 	"io/ioutil"
-	"log"
 	"math"
 	"os"
 	"path/filepath"
@@ -150,16 +149,13 @@ func createGFX(srcsPath string, size int, sort gfxRegionType) []byte {
 
 	files, err := ioutil.ReadDir(srcsPath)
 	if err != nil {
-		log.Fatal(err)
+		println("Unable to open gfx dir", srcsPath)
+		os.Exit(1)
 	}
 
 	for _, file := range files {
 		if file.IsDir() {
 			continue
-		}
-
-		if verbose {
-			println("Processing image '", file.Name(), "'")
 		}
 
 		if !strings.HasSuffix(file.Name(), ".png") {
@@ -168,6 +164,11 @@ func createGFX(srcsPath string, size int, sort gfxRegionType) []byte {
 			}
 			continue
 		}
+
+		if verbose {
+			println("Processing image '", file.Name(), "'")
+		}
+
 		addGFX(srcsPath+"/"+file.Name(), rom, tileDim, allocator)
 		// TODO write palette to .h so 68000 can use it.
 		// TODO write either a sprite or a shape
