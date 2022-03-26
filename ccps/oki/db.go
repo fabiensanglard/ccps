@@ -2,7 +2,6 @@ package oki
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 )
 
@@ -12,16 +11,16 @@ type OkiRomEntry struct {
 }
 
 func (e *OkiRomEntry) size() uint32 {
-	return e.end - e.start + 1
+	return e.end - e.start
 }
 
 type OkiRom struct {
-	phrases [][]byte
+	Phrases [][]byte
 }
 
 func NewOkiROM() OkiRom {
 	rom := OkiRom{}
-	rom.phrases = make([][]byte, 0)
+	rom.Phrases = make([][]byte, 0)
 	return rom
 }
 
@@ -38,7 +37,7 @@ func (o *OkiRom) readEntry(src []byte) *OkiRomEntry {
 
 func createOKI() OkiRom {
 	oki := OkiRom{}
-	oki.phrases = make([][]byte, 0)
+	oki.Phrases = make([][]byte, 0)
 	return oki
 }
 
@@ -46,30 +45,24 @@ const maxPhrases int = 127
 const headerSize = 0x3FF
 const indexEntrySize int = 8
 
-func OpenOKI(path string) (*OkiRom, error) {
-	rom, err := ioutil.ReadFile(path)
-	if err != nil {
-		fmt.Print(err)
-		return nil, err
-	}
-
+func OpenOKI(rom []byte) *OkiRom {
 	o := createOKI()
 
 	// Parse
 	for i := 1; i <= maxPhrases; i++ {
 		addrSlice := rom[i*indexEntrySize : i*indexEntrySize+indexEntrySize]
 		entry := o.readEntry(addrSlice)
-		if entry.size() == 0 {
-			continue
+		if entry.start == entry.end {
+			break
 		}
-		o.phrases = append(o.phrases, rom[entry.start:entry.end])
+		o.Phrases = append(o.Phrases, rom[entry.start:entry.end])
 	}
 
-	return &o, nil
+	return &o
 }
 
 func (o *OkiRom) AddPhrase(phrase []byte) {
-	o.phrases = append(o.phrases, phrase)
+	o.Phrases = append(o.Phrases, phrase)
 }
 
 func (o *OkiRom) writeEntry(addr OkiRomEntry, dst []byte) {
@@ -87,43 +80,49 @@ func (o *OkiRom) writeEntry(addr OkiRomEntry, dst []byte) {
 	dst[7] = 0
 }
 
-func (o *OkiRom) genROM() []byte {
-	if len(o.phrases) == 0 {
+func (o *OkiRom) genROM(size int64) []byte {
+	if len(o.Phrases) == 0 {
 		return nil
 	}
 
-	if len(o.phrases) > maxPhrases {
-		println(fmt.Sprintf("Too many phrases %d, max=127"))
+	if len(o.Phrases) > maxPhrases {
+		println(fmt.Sprintf("Too many phrases %d, max=%d", len(o.Phrases), maxPhrases))
 		os.Exit(1)
 	}
 
 	var totalSize uint32 = 0
-	for _, phase := range o.phrases {
+	for _, phase := range o.Phrases {
 		totalSize += uint32(len(phase))
 	}
 
-	rom := make([]byte, 65536)
-	o.writeHeader(rom[0:headerSize])
+	rom := make([]byte, size)
+
+	header := rom[:headerSize]
+	// The first entry must be left empty
+	o.writeHeader(header[indexEntrySize:])
 	o.writePhrases(rom[headerSize:])
 	return rom
 }
 
 func (o *OkiRom) writeHeader(header []byte) {
-	if len(header) != headerSize {
+	if len(header) != headerSize-indexEntrySize {
 		println("Unexpected oki header size. Got", len(header), "but expected", headerSize)
 		os.Exit(1)
 	}
 
 	var cursor uint32 = 0
-	for i, phrase := range o.phrases {
+	for i, phrase := range o.Phrases {
 		entry := OkiRomEntry{}
 		entry.start = cursor
-		entry.end = cursor + uint32(len(phrase))
+		entry.end = cursor + uint32(len(phrase)) - 1
 		headerOffset := i * indexEntrySize
 		o.writeEntry(entry, header[headerOffset:headerOffset+indexEntrySize])
 	}
 }
 
 func (o *OkiRom) writePhrases(phrases []byte) {
-
+	for _, p := range o.Phrases {
+		copy(phrases, p)
+		phrases = phrases[len(p):]
+	}
 }

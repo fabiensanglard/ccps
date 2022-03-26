@@ -10,8 +10,9 @@ const cmdHelloWorld = "hw"
 const cmdInstall = "install"
 const cmdClean = "clean"
 const cmdDumpGFX = "dumpgfx"
+const cmdDumpSFX = "dumpsfx"
 
-var allCmds = []string{cmdBuild, cmdInstall, cmdHelloWorld, cmdClean, cmdDumpGFX}
+var allCmds = []string{cmdBuild, cmdInstall, cmdHelloWorld, cmdClean, cmdDumpGFX, cmdDumpSFX}
 
 func rm(dir string) {
 	err := os.RemoveAll(dir)
@@ -32,18 +33,20 @@ func main() {
 		os.Exit(1)
 	}
 	cmd := os.Args[1]
-	args := os.Args[1:]
+	args := os.Args[2:]
 
 	if cmd == cmdBuild {
 		build(args)
 	} else if cmd == cmdHelloWorld {
 		helloWorld(args)
 	} else if cmd == cmdInstall {
-		install(args[1:])
+		install(args)
 	} else if cmd == cmdClean {
 		clean()
 	} else if cmd == cmdDumpGFX {
 		dumpGFX(args)
+	} else if cmd == cmdDumpSFX {
+		dumpSFX(args)
 	} else {
 		println(fmt.Sprintf("Usage: ccps %v", allCmds))
 	}

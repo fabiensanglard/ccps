@@ -27,7 +27,6 @@ const ext_rel = ".rel"
 const ext_c = ".c"
 
 var verbose bool
-var dryRun bool
 var board boards.Board
 
 func run(c string) {
@@ -46,9 +45,8 @@ func run(c string) {
 
 }
 
-func Build(v bool, dr bool, b *boards.Board) string {
+func Build(v bool, b *boards.Board) []byte {
 	verbose = v
-	dryRun = dr
 	board = *b
 
 	checkTools()
@@ -76,7 +74,13 @@ func Build(v bool, dr bool, b *boards.Board) string {
 	}
 
 	obj := binarize(linked)
-	rom := pad(obj)
+	romPath := pad(obj)
+
+	rom, err := os.ReadFile(romPath)
+	if err != nil {
+		println("Cannot read generated z80 ROM", err)
+		os.Exit(1)
+	}
 
 	return rom
 }

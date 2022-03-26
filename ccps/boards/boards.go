@@ -6,15 +6,21 @@ import (
 	"os"
 )
 
-type Rom2Eprom func(string, string)
+type Rom2Eprom func([]byte, string)
 
 type CpsBRegisters struct {
 	palette int
 }
 
+type ROM struct {
+	Filename string
+	Size     int
+}
+
 type ROMSet struct {
 	Size    int64
 	Epromer Rom2Eprom
+	Roms    []ROM
 }
 
 type Board struct {
@@ -39,52 +45,52 @@ var boards []Board
 
 func sf2Board() *Board {
 	sf2 := Board{}
-	sf2.Z80.Size = 65536
+	sf2.Z80.Size = 65_536
 	sf2.Z80.Epromer = sf2Z80EPromer
 
-	sf2.M68k.Size = 1048576
+	sf2.M68k.Size = 1_048_576
 	sf2.M68k.Epromer = sf2M68kEPromer
 
-	sf2.GFX.Size = 6291456
+	sf2.GFX.Size = 6_291_456
 	sf2.GFX.Epromer = sf2GFXEpromer
 	sf2.GFXSizes = [4]int{4_718_592, 0, 0, 0}
 
 	sf2.Oki.Size = 0x40000
 	sf2.Oki.Epromer = okiEpromer
+	sf2.Oki.Roms = []ROM{
+		{Filename: "sf2_18.11c",
+			Size: 0x20000},
+		{Filename: "sf2_19.12c",
+			Size: 0x20000},
+	}
 
 	return &sf2
 }
 
-func cp(src string, dst string) {
-	//cmd := fmt.Sprintf("cp %s %s", src, dst)
-	//if verbose
-	//println(cmd)
+//func cp(src string, dst string) {
+//	//cmd := fmt.Sprintf("cp %s %s", src, dst)
+//	//if verbose
+//	//println(cmd)
+//
+//	input, err := ioutil.ReadFile(src)
+//	if err != nil {
+//		fmt.Println(fmt.Sprintf("cp error: Cannot open src: '%s'", src))
+//		os.Exit(1)
+//	}
+//
+//	err = ioutil.WriteFile(dst, input, 0644)
+//	if err != nil {
+//		fmt.Println(fmt.Sprintf("cp error: Cannot dst: '%s'", dst))
+//		os.Exit(1)
+//	}
+//}
 
-	input, err := ioutil.ReadFile(src)
-	if err != nil {
-		fmt.Println(fmt.Sprintf("cp error: Cannot open src: '%s'", src))
-		os.Exit(1)
-	}
-
-	err = ioutil.WriteFile(dst, input, 0644)
-	if err != nil {
-		fmt.Println(fmt.Sprintf("cp error: Cannot dst: '%s'", dst))
-		os.Exit(1)
-	}
-}
-
-func okiEpromer(romPath string, outDir string) {
-	rom, err := ioutil.ReadFile(romPath)
-	if err != nil {
-		fmt.Println(fmt.Sprintf("Cannot open GFX ROM '%s'", romPath))
-		os.Exit(1)
-	}
-
+func okiEpromer(rom []byte, outDir string) {
 	const romSize = 0x20000
 	rom1 := rom[0:romSize]
 	rom2 := rom[romSize:]
 
-	err = ioutil.WriteFile(outDir+"sf2_18.11c", rom1, 0644)
+	err := ioutil.WriteFile(outDir+"sf2_18.11c", rom1, 0644)
 	if err != nil {
 		fmt.Println("Unable to write Oki EPROM 'sf2_18.11c'")
 		os.Exit(1)
@@ -98,14 +104,7 @@ func okiEpromer(romPath string, outDir string) {
 
 }
 
-func sf2GFXEpromer(romPath string, outDir string) {
-	gfxrom, err := ioutil.ReadFile(romPath)
-
-	if err != nil {
-		fmt.Println(fmt.Sprintf("Cannot open GFX ROM '%s'", romPath))
-		os.Exit(1)
-	}
-
+func sf2GFXEpromer(gfxrom []byte, outDir string) {
 	// Split it
 	const BANK_SIZE = 0x200000
 	bank0 := gfxrom[0*BANK_SIZE : 0*BANK_SIZE+BANK_SIZE]
@@ -130,18 +129,16 @@ func sf2GFXEpromer(romPath string, outDir string) {
 	writeToFile(bank2[6:0x80000], 2, 8, ROM_SIZE, outDir+"sf2-11m.5d")
 }
 
-func sf2Z80EPromer(rom string, outputDir string) {
-	cp(rom, outputDir+"sf2_9.12a")
-}
-
-func sf2M68kEPromer(rom string, outputDir string) {
-	r, err := ioutil.ReadFile(rom)
-
+func sf2Z80EPromer(rom []byte, outputDir string) {
+	path := outputDir + "sf2_9.12a"
+	err := ioutil.WriteFile(path, rom, 0644)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Cannot open Z80 ROM '%s'", rom))
+		fmt.Println("Unable to write EPROM '", path, "'")
 		os.Exit(1)
 	}
+}
 
+func sf2M68kEPromer(r []byte, outputDir string) {
 	const ROM_SIZE = 131072
 	writeToFile(r[0*ROM_SIZE:], 1, 2, ROM_SIZE, outputDir+"sf2e_30g.11e")
 	writeToFile(r[0*ROM_SIZE+1:], 1, 2, ROM_SIZE, outputDir+"sf2e_37g.11f")

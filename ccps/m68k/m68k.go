@@ -69,7 +69,7 @@ func checkTools() {
 var verbose bool
 var board boards.Board
 
-func Build(v bool, dryRun bool, b *boards.Board) string {
+func Build(v bool, b *boards.Board) []byte {
 	verbose = v
 	board = *b
 	checkTools()
@@ -96,7 +96,14 @@ func Build(v bool, dryRun bool, b *boards.Board) string {
 		os.Exit(1)
 	}
 
-	rom := binarize(linked)
+	romPath := binarize(linked)
+
+	rom, err := os.ReadFile(romPath)
+	if err != nil {
+		println("Cannot read generated m68k ROM", err)
+		os.Exit(1)
+	}
+
 	return rom
 }
 

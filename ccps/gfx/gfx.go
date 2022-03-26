@@ -51,7 +51,7 @@ var sortPath = [4]string{
 	gfxSrcPath + "scr3",
 }
 
-func Build(v bool, dryRun bool, b *boards.Board) string {
+func Build(v bool, b *boards.Board) []byte {
 	verbose = v
 	board = *b
 
@@ -114,8 +114,13 @@ func Build(v bool, dryRun bool, b *boards.Board) string {
 		os.Exit(1)
 	}
 
-	// Return everything rom path
-	return romPath
+	rom, err := os.ReadFile(romPath)
+	if err != nil {
+		println("Cannot read generated GFX ROM", err)
+		os.Exit(1)
+	}
+
+	return rom
 }
 
 func getTileDim(sort gfxRegionType) int {

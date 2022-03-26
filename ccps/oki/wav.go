@@ -32,6 +32,7 @@ type WaveHeader struct {
 
 // Great WAV format description
 // http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html
+// http://soundfile.sapp.org/doc/WaveFormat/
 func LoadWav(path string) (*Wav, error) {
 	wav := Wav{}
 

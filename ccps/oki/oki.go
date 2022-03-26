@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func Build(v bool, dryRun bool, board *boards.Board) []byte {
+func Build(v bool, board *boards.Board) []byte {
 	verbose := v
 
 	wavDir := "sfx/"
@@ -43,9 +43,9 @@ func Build(v bool, dryRun bool, board *boards.Board) []byte {
 		// sox test.wav -r 7575 -b 8 -c 1 outfile.wav
 		// soxi sfx/moldova.wav
 		// mpg321 -w moldova.wav moldova.mp3
-		adpcm := toADPCM(wav.data)
+		adpcm := PCMtoADPCM(wav.data)
 		okiRom.AddPhrase(adpcm)
 	}
 
-	return okiRom.genROM()
+	return okiRom.genROM(board.Oki.Size)
 }
