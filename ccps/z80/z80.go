@@ -19,8 +19,8 @@ const linker = "sdldz80"
 const objcopy = "objcopy"
 const dd = "dd"
 
-const srcsPath = "cc/z80/"
-const objectDir = ".tmp/" + srcsPath
+const SrcsPath = "cc/z80/"
+const objectDir = ".tmp/" + SrcsPath
 
 const ext_as = ".s"
 const ext_rel = ".rel"
@@ -155,9 +155,9 @@ func checkTools() {
 // cc/z80/*.as -> .tmp/cc/z80/*.rel
 func assemble() (error, []string) {
 
-	files, err := ioutil.ReadDir(srcsPath)
+	files, err := ioutil.ReadDir(SrcsPath)
 	if err != nil {
-		println(fmt.Sprintf("Unable to read dir '%s'", srcsPath))
+		println(fmt.Sprintf("Unable to read dir '%s'", SrcsPath))
 		os.Exit(1)
 	}
 
@@ -178,7 +178,7 @@ func assemble() (error, []string) {
 		cmd := fmt.Sprintf("%s -plogff -o %s %s",
 			as,
 			output,
-			srcsPath+src.Name())
+			SrcsPath+src.Name())
 		run(cmd)
 
 		if verbose {
@@ -192,7 +192,7 @@ func assemble() (error, []string) {
 }
 
 func compile() (error, []string) {
-	files, err := ioutil.ReadDir(srcsPath)
+	files, err := ioutil.ReadDir(SrcsPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -210,7 +210,7 @@ func compile() (error, []string) {
 		basename := filepath.Base(src.Name())
 		name := strings.TrimSuffix(basename, filepath.Ext(basename))
 		output := objectDir + name + ext_rel
-		input := srcsPath + src.Name()
+		input := SrcsPath + src.Name()
 		cmd := fmt.Sprintf("%s --compile-only -mz80 --data-loc 0xd000 --no-std-crt0 -o %s %s",
 			cc,
 			output,

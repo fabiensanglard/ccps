@@ -13,8 +13,10 @@ func Build(v bool, board *boards.Board) []byte {
 	wavDir := "sfx/"
 	files, err := ioutil.ReadDir(wavDir)
 	if err != nil {
-		println("Unable to open gfx dir", wavDir)
-		os.Exit(1)
+		if verbose {
+			println("Unable to open sfx dir", wavDir)
+		}
+		return nil
 	}
 
 	okiRom := NewOkiROM()

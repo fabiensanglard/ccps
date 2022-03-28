@@ -12,19 +12,25 @@ import (
 	"os"
 )
 
-func build([]string) {
+func build(args []string) {
 	fs := flag.NewFlagSet("build", flag.ContinueOnError)
 	verbose := fs.Bool("v", false, "Verbose mode")
-	target := fs.String("board", "sf2", "Target board")
-	if err := fs.Parse(os.Args[2:]); err != nil {
+	target := fs.String("b", "", "Target board")
+	if err := fs.Parse(args); err != nil {
 		println(fmt.Sprintln("Cmd parsing error '%s'", err))
+	}
+
+	if *target == "" {
+		println("Error: No board specified (-b)")
+		os.Exit(1)
 	}
 
 	board := boards.Get(*target)
 
 	// Create output folder
 	outputDir := "out/"
-	err := os.MkdirAll(outputDir, os.ModePerm)
+	err := os.RemoveAll(outputDir)
+	err = os.MkdirAll(outputDir, 0777)
 	if err != nil {
 		fmt.Println(fmt.Sprintf("Unable to create dir '%s'", outputDir))
 		os.Exit(1)

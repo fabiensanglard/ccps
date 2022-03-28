@@ -81,7 +81,10 @@ func Build(v bool, b *boards.Board) []byte {
 		},
 	}
 
-	// TODO: Check if there is nothing to do
+	// Test if there is a gfx src folder. If not, return null
+	if _, err := os.Stat(gfxSrcPath); os.IsNotExist(err) {
+		return nil
+	}
 
 	var sizes [4]int
 	for _, region := range regions {
@@ -154,8 +157,10 @@ func createGFX(srcsPath string, size int, sort gfxRegionType) []byte {
 
 	files, err := ioutil.ReadDir(srcsPath)
 	if err != nil {
-		println("Unable to open gfx dir", srcsPath)
-		os.Exit(1)
+		if verbose {
+			println("Unable to open gfx dir", srcsPath)
+		}
+		return rom
 	}
 
 	for _, file := range files {

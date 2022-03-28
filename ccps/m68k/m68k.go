@@ -17,8 +17,8 @@ const cc = "m68k-linux-gnu-gcc"
 const as = "m68k-linux-gnu-as"
 const objcopy = "m68k-linux-gnu-objcopy"
 
-const srcsPath = "cc/68000/"
-const objectDir = ".tmp/" + srcsPath
+const SrcsPath = "cc/68000/"
+const objectDir = ".tmp/" + SrcsPath
 
 const ext_as = ".s"
 const ext_obj = ".o"
@@ -159,7 +159,7 @@ func link(objs []string) (error, string) {
 }
 
 func compile() (error, []string) {
-	files, err := ioutil.ReadDir(srcsPath)
+	files, err := ioutil.ReadDir(SrcsPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -177,7 +177,7 @@ func compile() (error, []string) {
 		basename := filepath.Base(src.Name())
 		name := strings.TrimSuffix(basename, filepath.Ext(basename))
 		output := objectDir + name + ext_obj
-		input := srcsPath + src.Name()
+		input := SrcsPath + src.Name()
 		cmd := fmt.Sprintf("%s -m68000 -nostdlib -c -O0 -o %s %s",
 			cc,
 			output,
@@ -195,9 +195,9 @@ func compile() (error, []string) {
 }
 
 func assemble() (error, []string) {
-	files, err := ioutil.ReadDir(srcsPath)
+	files, err := ioutil.ReadDir(SrcsPath)
 	if err != nil {
-		println(fmt.Sprintf("Unable to read dir '%s'", srcsPath))
+		println(fmt.Sprintf("Unable to read dir '%s'", SrcsPath))
 		os.Exit(1)
 	}
 
@@ -218,7 +218,7 @@ func assemble() (error, []string) {
 		cmd := fmt.Sprintf("%s -m68000 --register-prefix-optional -o %s %s",
 			as,
 			output,
-			srcsPath+src.Name())
+			SrcsPath+src.Name())
 		run(cmd)
 
 		if verbose {

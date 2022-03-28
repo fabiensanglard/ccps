@@ -98,6 +98,9 @@ func sf2Board() *Board {
 }
 
 func okiEpromer(rom []byte, outDir string) {
+	if rom == nil {
+		return
+	}
 	const romSize = 0x20000
 	rom1 := rom[0:romSize]
 	rom2 := rom[romSize:]
@@ -117,6 +120,9 @@ func okiEpromer(rom []byte, outDir string) {
 }
 
 func sf2GFXEpromer(gfxrom []byte, outDir string) {
+	if gfxrom == nil {
+		return
+	}
 	// Split it
 	const BANK_SIZE = 0x200000
 	bank0 := gfxrom[0*BANK_SIZE : 0*BANK_SIZE+BANK_SIZE]
