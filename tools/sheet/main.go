@@ -16,19 +16,20 @@ func main() {
 	fmt.Println("Extracting...")
 
 	var sf2 = makeSF2()
-	var ghouls = makeGhouls()
-	var sf2hf = makeSF2HF()
-	var ffight = makeFFight()
-	var pang3 = makePang3()
-	var ssf = makeSSF()
-	var sfa3 = makeSFA3()
-	var sfa = makeSFA()
-	var strider = makeStrider()
-	var fw = makeForgottenUE()
+	//var ghouls = makeGhouls()
+	//var sf2hf = makeSF2HF()
+	//var ffight = makeFFight()
+	//var pang3 = makePang3()
+	//var ssf = makeSSF()
+	//var sfa3 = makeSFA3()
+	//var sfa = makeSFA()
+	//var strider = makeStrider()
+	//var fw = makeForgottenUE()
 
 	var wg sync.WaitGroup
 
-	var games = []Extractable{ &sf2, &ffight, &ghouls, &sf2hf, &pang3, &ssf, &sfa3, &sfa, &strider, &fw}
+	//var games = []Extractable{ &sf2, &ffight, &ghouls, &sf2hf, &pang3, &ssf, &sfa3, &sfa, &strider, &fw}
+	var games = []Extractable{ &sf2}
 	for _, game := range games {
 		if game.Load() {
 			fmt.Println("Found game:", game.GetName())

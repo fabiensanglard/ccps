@@ -13,8 +13,12 @@ type CpsBRegisters struct {
 }
 
 type ROM struct {
-	Filename string
-	Size     int
+	Filename  string
+	WordSize  int // If the ROM accessed in 1 byte, 2 byte or more?
+	Size      int // Chip size
+	Offset    int // Offset from where to start reading/writing the ROM
+	DstOffset int // Offset in memory RAM
+	Skip      int // How much to skip after each read/write when converting from ROM to memory space
 }
 
 type ROMSet struct {
@@ -23,9 +27,15 @@ type ROMSet struct {
 	Roms    []ROM
 }
 
+type GFXArea struct {
+	Start int
+	Size  int
+	Dim   int
+}
+
 type Board struct {
 	CpsBReg  CpsBRegisters
-	GFXSizes [4]int
+	GFXAreas [4]GFXArea
 	GFX      ROMSet
 	Z80      ROMSet
 	M68k     ROMSet
@@ -51,39 +61,41 @@ func sf2Board() *Board {
 	sf2.M68k.Size = 1_048_576
 	sf2.M68k.Epromer = sf2M68kEPromer
 
-	sf2.GFX.Size = 6_291_456
+	sf2.GFX.Size = 12 * 0x80000 // 0x600000 = 6 MiB
 	sf2.GFX.Epromer = sf2GFXEpromer
-	sf2.GFXSizes = [4]int{4_718_592, 0, 0, 0}
+	// Fiding size can be done via PAL bank mapper (size * 64)
+	sf2.GFXAreas = [4]GFXArea{
+		{0, 0x480000, 16},
+		{0x480000, 0x80000, 32},
+		{0x500000, 0x40000, 8},
+		{0x540000, 0x80000, 16}}
+
+	sf2.GFX.Roms = []ROM{
+		{Filename: "sf2-5m.4a", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x0000000, Skip: 8},
+		{Filename: "sf2-7m.6a", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x0000002, Skip: 8},
+		{Filename: "sf2-1m.3a", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x0000004, Skip: 8},
+		{Filename: "sf2-3m.5a", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x0000006, Skip: 8},
+
+		{Filename: "sf2-6m.4c", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x200000, Skip: 8},
+		{Filename: "sf2-8m.6c", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x200002, Skip: 8},
+		{Filename: "sf2-2m.3c", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x200004, Skip: 8},
+		{Filename: "sf2-4m.5c", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x200006, Skip: 8},
+
+		{Filename: "sf2-13m.4d", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x400000, Skip: 8},
+		{Filename: "sf2-15m.6d", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x400002, Skip: 8},
+		{Filename: "sf2-9m.3d", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x400004, Skip: 8},
+		{Filename: "sf2-11m.5d", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x400006, Skip: 8},
+	}
 
 	sf2.Oki.Size = 0x40000
 	sf2.Oki.Epromer = okiEpromer
 	sf2.Oki.Roms = []ROM{
-		{Filename: "sf2_18.11c",
-			Size: 0x20000},
-		{Filename: "sf2_19.12c",
-			Size: 0x20000},
+		{Filename: "sf2_18.11c", Size: 0x20000},
+		{Filename: "sf2_19.12c", Size: 0x20000},
 	}
 
 	return &sf2
 }
-
-//func cp(src string, dst string) {
-//	//cmd := fmt.Sprintf("cp %s %s", src, dst)
-//	//if verbose
-//	//println(cmd)
-//
-//	input, err := ioutil.ReadFile(src)
-//	if err != nil {
-//		fmt.Println(fmt.Sprintf("cp error: Cannot open src: '%s'", src))
-//		os.Exit(1)
-//	}
-//
-//	err = ioutil.WriteFile(dst, input, 0644)
-//	if err != nil {
-//		fmt.Println(fmt.Sprintf("cp error: Cannot dst: '%s'", dst))
-//		os.Exit(1)
-//	}
-//}
 
 func okiEpromer(rom []byte, outDir string) {
 	const romSize = 0x20000

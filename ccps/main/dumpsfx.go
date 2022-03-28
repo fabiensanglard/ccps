@@ -32,7 +32,7 @@ func dumpSFX(args []string) {
 	//}
 	err = os.MkdirAll(dumpFolder, 0777)
 	if err != nil {
-		println("Unable to create dump folder ", dumpFolder, ":", err.Error())
+		println("Unable to create SFX dump folder ", dumpFolder, ":", err.Error())
 		os.Exit(1)
 	}
 
@@ -92,7 +92,7 @@ func writeWav(path string, pcm []byte) {
 
 	err := os.WriteFile(path, wav, 0644)
 	if err != nil {
-		println("Unable to write", path)
+		println("Unable to write wav file at", path)
 		os.Exit(1)
 	}
 }

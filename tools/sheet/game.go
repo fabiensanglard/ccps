@@ -110,11 +110,11 @@ func (game *Game) dumpSheet(sheetID int, sheet []byte, folder string) {
 			game.drawTile(sheet[offset:offset+TILES_SIZE], x*TILE_WIDTH, y*TILE_HEIGHT, img, sheetID)
 		}
 	}
-	filename := fmt.Sprintf("%s/0x%02x00.png", folder, sheetID)
+	filename := fmt.Sprintf("%s/%04d.png", folder, sheetID)
 	f, _ := os.Create(filename)
 	defer f.Close()
 	png.Encode(f, img)
-	png2svg(filename, fmt.Sprintf("%s/0x%02x00.svg", folder, sheetID), sheetID)
+	//png2svg(filename, fmt.Sprintf("%s/%04d.svg", folder, sheetID), sheetID)
 }
 
 func (game *Game) desinterleave(roms []RomSrc, dstROM []byte) bool {
