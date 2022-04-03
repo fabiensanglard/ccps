@@ -4,9 +4,11 @@ import (
 	"ccps/boards"
 	"fmt"
 	"image"
-	_ "image/png"
+	"image/color"
+	"image/png"
 	"io/ioutil"
 	"math"
+	"math/bits"
 	"os"
 	"path/filepath"
 	"strings"
@@ -146,6 +148,9 @@ func getTileDim(sort gfxRegionType) int {
 // Visit all PNG in folder, find a free location and write them in rom
 func createGFX(srcsPath string, size int, sort gfxRegionType) []byte {
 	var rom = make([]byte, size)
+	for i := 0; i < len(rom); i++ {
+		rom[i] = 0xFF
+	}
 
 	if verbose {
 		println("Created ROM size", len(rom), " for region ", sort)
@@ -218,25 +223,28 @@ func addGFX(src string, rom []byte, tileDim int, allocator *allocator) {
 	}
 
 	// Make sure transparency if properly set (index is 15).
-	transparentIndex := -1
+	transparentIndex := uint8(0)
 	for i, c := range i.Palette {
 		_, _, _, a := c.RGBA()
 		if a == 0 {
-			if transparentIndex == -1 {
-				transparentIndex = i
-			} else {
-				println("Image '", src, "' must have exacltly one transparent colors (found ", transparentIndex, ")")
-				os.Exit(1)
-			}
+			transparentIndex = uint8(i)
+			break
 		}
 	}
 
 	if transparentIndex != 15 {
-		makeTransparent15(i, uint8(transparentIndex))
+		makeTransparent15(i, transparentIndex)
 	}
 
 	// Round up dimension so it perfectly matches tiles layout
-	adjustRectToTile(i, int(tileDim))
+	adjustRectToTile(i, tileDim)
+
+	// then save to file
+	f, err := os.Create("outimage.png")
+	err = png.Encode(f, img)
+	//if err != nil {
+	//	// Handle error
+	//}
 
 	// Image is ready. Write it to ROM
 	filename := filepath.Base(src)
@@ -294,50 +302,65 @@ func adjustRectToTile(img *image.Paletted, tileDim int) {
 	img.Pix = newPx
 }
 
-func writeTiles(i *image.Paletted, dsts []int, rom []byte, tileDim int) {
-	width := int(math.Round(float64(i.Rect.Max.X) / float64(tileDim)))
-	height := int(math.Round(float64(i.Rect.Max.Y) / float64(tileDim)))
-
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			writeTile(x, y, i, rom, tileDim, dsts[y*width+x])
-		}
-	}
-}
-
-func writeTile(xTile int, yTile int, i *image.Paletted, rom []byte, tileDim int, dstTile int) {
-	var width int
-	if xTile <= (i.Rect.Max.X / tileDim) {
-		width = tileDim
-	} else {
-		width = i.Rect.Max.X % tileDim
+// Extract all ith bit of each byte in the array
+func mask(mask byte, bytes []byte) byte {
+	if len(bytes) != 8 {
+		println("Requested masking of array len != 8")
+		os.Exit(1)
 	}
 
-	var height int
-	if xTile <= (i.Rect.Max.Y / tileDim) {
-		height = tileDim
-	} else {
-		height = i.Rect.Max.Y % tileDim
+	r := uint8(0)
+	for _, b := range bytes {
+		r <<= 1
+		r |= (b & mask) >> bits.TrailingZeros8(mask)
 	}
-
-	for h := 0; h < height; h++ {
-		lineDest := dstTile*tileDim*tileDim/2 + 128*h
-		bytes := width / 2
-		writeTileLine(i, width, xTile*tileDim, yTile*tileDim, rom[lineDest:lineDest+bytes])
-	}
+	return r
 }
 
 func writeTileLine(img *image.Paletted, width int, x int, y int, dst []byte) {
-	var acc uint8 = 0
-	var cursor = 0
-	for i := 0; i < width; i++ {
-		index := img.ColorIndexAt(x+i, y)
-		acc <<= 4
-		acc |= index
-		if (i % 2) == 1 { // Write to rom every other pen values.
-			dst[cursor] = acc
-			cursor += 1
-			acc = 0
+	cursor := 0
+	indexes := make([]byte, 8)
+	for i := 0; i < width/8; i++ {
+		indexes[0] = img.ColorIndexAt(x+i*8+0, y)
+		indexes[1] = img.ColorIndexAt(x+i*8+1, y)
+		indexes[2] = img.ColorIndexAt(x+i*8+2, y)
+		indexes[3] = img.ColorIndexAt(x+i*8+3, y)
+		indexes[4] = img.ColorIndexAt(x+i*8+4, y)
+		indexes[5] = img.ColorIndexAt(x+i*8+5, y)
+		indexes[6] = img.ColorIndexAt(x+i*8+6, y)
+		indexes[7] = img.ColorIndexAt(x+i*8+7, y)
+
+		dst[cursor+0] = mask(0x1, indexes)
+		dst[cursor+1] = mask(0x2, indexes)
+		dst[cursor+2] = mask(0x4, indexes)
+		dst[cursor+3] = mask(0x8, indexes)
+		cursor += 4
+	}
+}
+
+// xTile = coordinate of src
+func writeTile(x int, y int, i *image.Paletted, rom []byte, tileDim int, tileID int) {
+	bytesPerTile := tileDim * tileDim / 2 // 4 bit per pixel, always
+	bytesPerLine := tileDim / 2           // 4 bit per pixel, always
+	romOffset := tileID * bytesPerTile
+	tileDst := rom[romOffset : romOffset+bytesPerTile]
+	for h := 0; h < tileDim; h++ {
+		lineOffset := bytesPerLine * h
+		writeTileLine(i, tileDim, x, y+h, tileDst[lineOffset:lineOffset+bytesPerLine])
+	}
+}
+
+// Image i (src of colors)
+// dsts Allocated tile IDs
+// rom , the ROM
+// tileID 8,16, or 32
+func writeTiles(i *image.Paletted, dsts []int, rom []byte, tileDim int) {
+	width := i.Rect.Max.X / tileDim
+	height := i.Rect.Max.Y / tileDim
+
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			writeTile(x*tileDim, y*tileDim, i, rom, tileDim, dsts[y*width+x])
 		}
 	}
 }
@@ -379,15 +402,26 @@ func allocateSprite(allocator *allocator, bounds *image.Rectangle, tileDim int) 
 }
 
 // This function makes sure the image uses 15 as transparent color.
-func makeTransparent15(i *image.Paletted, transpIndex uint8) {
-	for x := 0; x < i.Bounds().Max.X; x++ {
-		for y := 0; y < i.Bounds().Max.Y; y++ {
-			if i.ColorIndexAt(x, y) == transpIndex {
-				i.SetColorIndex(x, y, 15)
-			}
-			if i.ColorIndexAt(x, y) == 15 {
-				i.SetColorIndex(x, y, transpIndex)
+func makeTransparent15(img *image.Paletted, transpIndex uint8) {
+	for y := 0; y < img.Bounds().Max.Y; y++ {
+		for x := 0; x < img.Bounds().Max.X; x++ {
+			index := img.ColorIndexAt(x, y)
+			if index == transpIndex {
+				img.SetColorIndex(x, y, 15)
+			} else if index == 15 {
+				img.SetColorIndex(x, y, transpIndex)
 			}
 		}
 	}
+
+	palette := make([]color.Color, 16)
+	for i, _ := range palette {
+		palette[i] = color.RGBA{R: 255, G: 255, B: 255, A: 0}
+	}
+	for i, _ := range img.Palette {
+		palette[i] = img.Palette[i]
+	}
+
+	palette[15] = color.RGBA{R: 255, G: 255, B: 255, A: 0}
+	img.Palette = palette
 }

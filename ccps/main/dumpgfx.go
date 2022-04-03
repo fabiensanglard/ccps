@@ -9,6 +9,7 @@ import (
 	"image/png"
 	"io/ioutil"
 	"os"
+	"sync"
 )
 
 type Palette struct {
@@ -59,25 +60,39 @@ func dumpGFX(args []string) {
 	desinterleave(board.GFX.Roms, rom)
 
 	// Dump ROM
-	//for i := 0; i < 4; i++ {
-	for i := 2; i < 3; i++ {
-		area := board.GFXAreas[i]
-		if *verbose {
-			println("Dumping GFX type", area.Dim)
-		}
-		dumpSheets(i, dumpFolder, area.Dim, rom[area.Start:area.Start+area.Size])
+	var wg sync.WaitGroup
+	for i := 0; i < 4; i++ {
+		//for i := 2; i < 3; i++ {
+
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			area := board.GFXAreas[i]
+			if *verbose {
+				println("Dumping GFX type", area.Dim)
+			}
+			dumpSheets(i, dumpFolder, area.Dim, rom[area.Start:area.Start+area.Size])
+		}(i)
 	}
+	wg.Wait()
 }
 
 func dumpSheets(prefix int, toDir string, dim int, rom []byte) {
 	bytesPerSheet := 256 * 256 / 2
 	numSheets := len(rom) / bytesPerSheet
 
+	var wg sync.WaitGroup
 	for i := 0; i < numSheets; i++ {
-		offset := i * bytesPerSheet
-		path := fmt.Sprintf("%s%d-%d.png", toDir, prefix, i)
-		dumpsheet(path, dim, rom[offset:offset+bytesPerSheet])
+
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			offset := i * bytesPerSheet
+			path := fmt.Sprintf("%s%d-%d.png", toDir, prefix, i)
+			dumpsheet(path, dim, rom[offset:offset+bytesPerSheet])
+		}(i)
 	}
+	wg.Wait()
 }
 
 func drawLine(line []byte, x int, y int, img *image.RGBA, dim int) {
@@ -87,9 +102,9 @@ func drawLine(line []byte, x int, y int, img *image.RGBA, dim int) {
 	if len(line) != dim/2 {
 		println("Unexpected line length for dim ", dim, ". Expected", dim/8, "but got", len(line))
 	}
-	// 8 pixels -> read 2 bytes
-	//16 pixels -> read 4 bytes
-	//32 pixels -> read 8 bytes
+	// 8 pixels -> read  4 bytes
+	//16 pixels -> read  8 bytes
+	//32 pixels -> read 16 bytes
 	cursor := 0
 	for i := 0; i < dim/8; i++ {
 		// Read four bytes

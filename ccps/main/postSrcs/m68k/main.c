@@ -106,7 +106,7 @@ void onVSync() {
     s->y = 100;
     s->tile = 	4;
 
-    s->attributes = 2 |  0x5 << 12 | 0x3 << 8; // Use palette 1, dim 12,8
+    s->attributes = 2 |  0x5 << 12 | 0x3 << 8; // Use palette 2 dim 5+1x3+1 = 6x4 tiles
     }
 
    sprites[i].attributes	= 0xFF00; // Last sprite marker
