@@ -7,7 +7,6 @@ import (
 	"image/color"
 	"image/png"
 	"io/ioutil"
-	"math"
 	"math/bits"
 	"os"
 	"path/filepath"
@@ -62,23 +61,24 @@ func Build(v bool, b *boards.Board) []byte {
 	// https://github.com/mamedev/mame/blob/master/src/mame/video/cps1.cpp#L1748
 	// sf2 = mapper_STF29 (https://github.com/mamedev/mame/blob/master/src/mame/video/cps1.cpp#L1085)
 
+	// TODO take this value from board
 	// Hardcoding it for now
 	var regions = []gfxRegion{
 		{
-			start: 0x00000,
-			end:   144*0x8000 - 1,
+			start: b.GFXAreas[0].Start,
+			end:   b.GFXAreas[0].Start + b.GFXAreas[0].Size,
 			sort:  OBJ,
 		}, {
-			start: 0x00000,
-			end:   0x00000,
+			start: b.GFXAreas[1].Start,
+			end:   b.GFXAreas[1].Start + b.GFXAreas[1].Size,
 			sort:  SCR1,
 		}, {
-			start: 0x00000,
-			end:   0x00000,
+			start: b.GFXAreas[2].Start,
+			end:   b.GFXAreas[2].Start + b.GFXAreas[2].Size,
 			sort:  SCR2,
 		}, {
-			start: 0x00000,
-			end:   0x00000,
+			start: b.GFXAreas[3].Start,
+			end:   b.GFXAreas[3].Start + b.GFXAreas[3].Size,
 			sort:  SCR3,
 		},
 	}
@@ -157,8 +157,8 @@ func createGFX(srcsPath string, size int, sort gfxRegionType) []byte {
 	}
 
 	tileDim := getTileDim(sort)
-	numTiles := len(rom) / int(tileDim)
-	allocator := makeAllocator(numTiles)
+	numTiles := len(rom) / tileDim
+	allocator := makeAllocator(numTiles, tileDim)
 
 	files, err := ioutil.ReadDir(srcsPath)
 	if err != nil {
@@ -248,17 +248,17 @@ func addGFX(src string, rom []byte, tileDim int, allocator *allocator) {
 
 	// Image is ready. Write it to ROM
 	filename := filepath.Base(src)
-	var tileDsts []int
+	var allocations []Allocation
 	if unicode.IsUpper(rune(filename[0])) {
 		// This is a sprite (rectangular shape)
-		tileDsts = allocateSprite(allocator, &i.Rect, tileDim)
+		allocations = allocateSprite(allocator, i, tileDim)
 	} else {
 		// This is a shape (collection of tiles)
-		tileDsts = allocateShape(allocator, &i.Rect, tileDim)
+		allocations = allocateShape(allocator, i, tileDim)
 	}
 
 	// Write tiles according to allocated tiles destinations
-	writeTiles(i, tileDsts, rom, tileDim)
+	writeTiles(i, allocations, rom, tileDim)
 }
 
 func adjustRectToTile(img *image.Paletted, tileDim int) {
@@ -354,51 +354,76 @@ func writeTile(x int, y int, i *image.Paletted, rom []byte, tileDim int, tileID 
 // dsts Allocated tile IDs
 // rom , the ROM
 // tileID 8,16, or 32
-func writeTiles(i *image.Paletted, dsts []int, rom []byte, tileDim int) {
-	width := i.Rect.Max.X / tileDim
-	height := i.Rect.Max.Y / tileDim
-
-	for x := 0; x < width; x++ {
-		for y := 0; y < height; y++ {
-			writeTile(x*tileDim, y*tileDim, i, rom, tileDim, dsts[y*width+x])
-		}
+func writeTiles(i *image.Paletted, dsts []Allocation, rom []byte, tileDim int) {
+	for _, a := range dsts {
+		writeTile(a.srcXTile*tileDim, a.srcYTile*tileDim, i, rom, tileDim, a.dst)
 	}
 }
 
-func allocateShape(allocator *allocator, bounds *image.Rectangle, tileDim int) []int {
-	var tiles []int
+type Allocation struct {
+	srcXTile int // Img x tile coordinate
+	srcYTile int // Img y tile coordinate
+	dst      int // ROM tile destiantion
+}
+
+func allocateShape(allocator *allocator, img *image.Paletted, tileDim int) []Allocation {
+	var tiles []Allocation
 
 	// Dimension (in tiles) of this image
-	width := math.Round(float64(bounds.Max.X) / float64(tileDim))
-	height := math.Round(float64(bounds.Max.Y) / float64(tileDim))
-	numTiles := int(width * height)
+	width := img.Rect.Max.X / tileDim
+	height := img.Rect.Max.Y / tileDim
 
-	for !allocator.isEmpty() {
-		tileId, err := allocator.any()
-		if err != nil {
-
-			os.Exit(1)
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			// If tile empty, skip it.
+			if tileIsTransparent(img, x, y, tileDim) {
+				continue
+			}
+			tileId, err := allocator.any()
+			if err != nil {
+				println("Out of GFX memory (dim=", tileDim, ")")
+				os.Exit(1)
+			}
+			allocation := Allocation{x, y, tileId}
+			tiles = append(tiles, allocation)
 		}
-		tiles = append(tiles, tileId)
-		numTiles--
-		if numTiles == 0 {
-			break
-		}
-	}
-
-	if numTiles > 0 {
-		println("Out of GFX memory.")
-		os.Exit(1)
 	}
 
 	return tiles
 }
 
-func allocateSprite(allocator *allocator, bounds *image.Rectangle, tileDim int) []int {
-	// TODO
-	println("Sprites not supported yet")
-	os.Exit(1)
-	return nil
+func allocateSprite(allocator *allocator, img *image.Paletted, tileDim int) []Allocation {
+
+	// Dimension (in tiles) of this image
+	width := img.Rect.Max.X / tileDim
+	height := img.Rect.Max.Y / tileDim
+
+	allocated, err := allocator.allocSprite(width, height)
+	if err != nil {
+		// TODO
+		println("Unable to allocate block")
+		os.Exit(1)
+	}
+
+	var allocations []Allocation
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			allocation := Allocation{x, y, allocated[x+y*width]}
+			allocations = append(allocations, allocation)
+		}
+	}
+	return allocations
+}
+
+func tileIsTransparent(img *image.Paletted, x int, y int, dim int) bool {
+	for h := 0; h < dim; h++ {
+		for w := 0; w < dim; w++ {
+			if img.ColorIndexAt(x*dim+w, y*dim+h) != 15 {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // This function makes sure the image uses 15 as transparent color.
