@@ -1,7 +1,9 @@
 // https://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Variable-Attributes.html
 // https://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_chapter/ld_3.html
 // https://mcuoneclipse.com/2016/11/01/getting-the-memory-range-of-sections-with-gnu-linker-files/
-#define GFXRAM   __attribute__ ((section (".gfx_data")))  
+
+#define GFXRAM   __attribute__ ((section (".gfx_data")))
+
 #define CPSA_REG __attribute__ ((section (".cpsa_reg")))  
 #define CPSB_REG __attribute__ ((section (".cpsb_reg")))  
 #define BYTE		unsigned char
@@ -26,12 +28,14 @@ typedef struct
 	WORD	attributes;   	// Sprite attribute
 } Sprite;
 
+// TODO __attribute__ ((aligned (0xFF))) ?
 GFXRAM Sprite sprites [MAXSPRITES]  =  {};
 
 #define Color WORD
 typedef struct {
   Color colors[16];
 } Palette;
+// TODO __attribute__ ((aligned ( 0x400))) ?
 GFXRAM Palette palettes[32];
 
 CPSA_REG WORD cpsa_reg[0x20] = {};

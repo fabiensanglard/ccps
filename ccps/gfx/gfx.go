@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/png"
 	"io/ioutil"
 	"math/bits"
 	"os"
@@ -238,13 +237,6 @@ func addGFX(src string, rom []byte, tileDim int, allocator *allocator) {
 
 	// Round up dimension so it perfectly matches tiles layout
 	adjustRectToTile(i, tileDim)
-
-	// then save to file
-	f, err := os.Create("outimage.png")
-	err = png.Encode(f, img)
-	//if err != nil {
-	//	// Handle error
-	//}
 
 	// Image is ready. Write it to ROM
 	filename := filepath.Base(src)

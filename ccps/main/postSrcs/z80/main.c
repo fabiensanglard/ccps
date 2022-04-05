@@ -31,6 +31,6 @@ void main() {
 	  }
 
 	  OKI = 0x80 | latch;
-    OKI = 0x81;
+      OKI = 0x81;
    }
 }
