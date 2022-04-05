@@ -82,14 +82,10 @@ void onVSync() {
    // sf2 uses CPS_B_11 
    // https://github.com/mamedev/mame/blob/master/src/mame/video/cps1.cpp#L480
 
-
    setPalette(0, 2, &ryu);
 
-   
-
-
    // Enable layers
-   cpsb_reg[0x26 / 2] = 0x3 << 6 ;//| 0x3 << 0xc; 
+//   cpsb_reg[0x26 / 2] = 0x3 << 6 ;//| 0x3 << 0xc;
    // sprite = 6, scroll1=8, scroll2=a, scroll3=c
    // cpsb_reg[0x13] = 0x12CE;
    // *((WORD*)0x00800166) = 0x12CE;

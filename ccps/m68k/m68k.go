@@ -15,7 +15,8 @@ import (
 
 const cc = "m68k-linux-gnu-gcc"
 const as = "m68k-linux-gnu-as"
-const objcopy = "m68k-linux-gnu-objcopy"
+
+//const objcopy = "m68k-linux-gnu-objcopy"
 
 const SrcsPath = "cc/68000/"
 const objectDir = ".tmp/" + SrcsPath
@@ -57,7 +58,7 @@ func checkTools() {
 	}
 	checkExecutable(as)
 	checkExecutable(cc)
-	checkExecutable(objcopy)
+	//checkExecutable(objcopy)
 
 	err := os.MkdirAll(objectDir, os.ModePerm)
 	if err != nil {
@@ -96,9 +97,9 @@ func Build(v bool, b *boards.Board) []byte {
 		os.Exit(1)
 	}
 
-	romPath := binarize(linked)
+	//romPath := binarize(linked)
 
-	rom, err := os.ReadFile(romPath)
+	rom, err := os.ReadFile(linked)
 	if err != nil {
 		println("Cannot read generated m68k ROM", err)
 		os.Exit(1)
@@ -107,26 +108,26 @@ func Build(v bool, b *boards.Board) []byte {
 	return rom
 }
 
-func binarize(input string) string {
-	// TODO Check rom size before padding it.
-	// Get the size.
-	fi, err := os.Stat(input)
-	if err != nil {
-		println(fmt.Sprintf("Error stating '%s': %v", input, err))
-		os.Exit(1)
-	}
-
-	// Make sure it is not too big.
-	if fi.Size() > board.M68k.Size {
-		fmt.Printf("68000 ROM is too big (%d bytes) max=%d bytes", fi.Size(), board.M68k.Size)
-	}
-
-	output := objectDir + "game.rom"
-	// TODO: Double check why we remove .data via -R
-	cmd := fmt.Sprintf("%s --gap-fill=0xFF --pad-to=%d -R .data --output-target=binary %s %s", objcopy, board.M68k.Size, input, output)
-	run(cmd)
-	return output
-}
+//func binarize(input string) string {
+//	// TODO Check rom size before padding it.
+//	// Get the size.
+//	fi, err := os.Stat(input)
+//	if err != nil {
+//		println(fmt.Sprintf("Error stating '%s': %v", input, err))
+//		os.Exit(1)
+//	}
+//
+//	// Make sure it is not too big.
+//	if fi.Size() > board.M68k.Size {
+//		fmt.Printf("68000 ROM is too big (%d bytes) max=%d bytes", fi.Size(), board.M68k.Size)
+//	}
+//
+//	output := objectDir + "game.rom"
+//	// TODO: Double check why we remove .data via -R
+//	cmd := fmt.Sprintf("%s --gap-fill=0xFF --pad-to=%d -R .data --output-target=binary %s %s", objcopy, board.M68k.Size, input, output)
+//	run(cmd)
+//	return output
+//}
 
 //go:embed cps1.lk
 var linkerScript []byte
