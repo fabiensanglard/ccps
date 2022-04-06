@@ -2,6 +2,7 @@ package gfx
 
 import (
 	"ccps/boards"
+	"ccps/sites"
 	"fmt"
 	"image"
 	"image/color"
@@ -42,13 +43,11 @@ type gfxRegion struct {
 	sort  gfxRegionType
 }
 
-const gfxSrcPath = "gfx/"
-
 var sortPath = [4]string{
-	gfxSrcPath + "obj",
-	gfxSrcPath + "scr1",
-	gfxSrcPath + "scr2",
-	gfxSrcPath + "scr3",
+	sites.GfxSrcPath + "obj",
+	sites.GfxSrcPath + "scr1",
+	sites.GfxSrcPath + "scr2",
+	sites.GfxSrcPath + "scr3",
 }
 
 func Build(v bool, b *boards.Board) []byte {
@@ -83,7 +82,7 @@ func Build(v bool, b *boards.Board) []byte {
 	}
 
 	// Test if there is a gfx src folder. If not, return null
-	if _, err := os.Stat(gfxSrcPath); os.IsNotExist(err) {
+	if _, err := os.Stat(sites.GfxSrcPath); os.IsNotExist(err) {
 		return nil
 	}
 

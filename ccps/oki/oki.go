@@ -2,6 +2,7 @@ package oki
 
 import (
 	"ccps/boards"
+	"ccps/sites"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -10,11 +11,10 @@ import (
 func Build(v bool, board *boards.Board) []byte {
 	verbose := v
 
-	wavDir := "sfx/"
-	files, err := ioutil.ReadDir(wavDir)
+	files, err := ioutil.ReadDir(sites.SfxSrcPath)
 	if err != nil {
 		if verbose {
-			println("Unable to open sfx dir", wavDir)
+			println("Unable to open sfx dir", sites.SfxSrcPath)
 		}
 		return nil
 	}
@@ -35,7 +35,7 @@ func Build(v bool, board *boards.Board) []byte {
 			println("Processing wav '", file.Name(), "'")
 		}
 
-		wavPath := wavDir + file.Name()
+		wavPath := sites.SfxSrcPath + file.Name()
 		wav, err := LoadWav(wavPath)
 		if err != nil {
 			println("Unable to open wav file", wavPath)

@@ -22,7 +22,7 @@ var srcZ80Crt0 []byte
 var srcZ80Main []byte
 
 func post(args []string) {
-	fs := flag.NewFlagSet("gfx", flag.ContinueOnError)
+	fs := flag.NewFlagSet("postFlags", flag.ContinueOnError)
 	verbose := fs.Bool("v", false, "Verbose mode")
 
 	if err := fs.Parse(args); err != nil {
