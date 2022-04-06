@@ -14,9 +14,23 @@ func ensureDir(dir string) {
 }
 
 const GfxSrcPath = "gfx/"
+const GfxObjPath = GfxSrcPath + "obj/"
+const GfxSC1Path = GfxSrcPath + "scr1/"
+const GfxSC2Path = GfxSrcPath + "scr2/"
+const GfxSc3Path = GfxSrcPath + "scr3/"
 
 func EnsureDirGFX() {
 	ensureDir(GfxSrcPath)
+	for _, path := range GfxLayersPath {
+		ensureDir(path)
+	}
+}
+
+var GfxLayersPath = [4]string{
+	GfxObjPath,
+	GfxSC1Path,
+	GfxSC2Path,
+	GfxSc3Path,
 }
 
 const SfxSrcPath = "sfx/"

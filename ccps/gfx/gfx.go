@@ -43,13 +43,6 @@ type gfxRegion struct {
 	sort  gfxRegionType
 }
 
-var sortPath = [4]string{
-	sites.GfxSrcPath + "obj",
-	sites.GfxSrcPath + "scr1",
-	sites.GfxSrcPath + "scr2",
-	sites.GfxSrcPath + "scr3",
-}
-
 func Build(v bool, b *boards.Board) []byte {
 	verbose = v
 	board = *b
@@ -94,7 +87,7 @@ func Build(v bool, b *boards.Board) []byte {
 
 	gfxRom := make([]byte, board.GFX.Size)
 	cursor := 0
-	for i, path := range sortPath {
+	for i, path := range sites.GfxLayersPath {
 		// For every type of GFX assets (OBJ, SCR1, SCR2, SCR3)
 		// create a "sort rom".
 		rom := createGFX(path, sizes[i], gfxRegionType(i))

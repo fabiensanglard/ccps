@@ -33,9 +33,10 @@ func helloWorld(args []string) {
 
 	// Drop a helloWorld GFX
 	sites.EnsureDirGFX()
-	ioutil.WriteFile(sites.GfxSrcPath+"helloworld.png", helloWorldSprite, 0644)
+	ioutil.WriteFile(sites.GfxObjPath+"helloworld.png", helloWorldSprite, 0644)
 
 	// Drop a helloWorld SFX
+	sites.EnsureDirSFX()
 	ioutil.WriteFile(sites.SfxSrcPath+"helloworld.wav", helloWorldSound, 0644)
 
 }
