@@ -66,36 +66,36 @@ void setPalette(int page, int paletteID, const Palette* palette) {
 	cpsa_reg[0xa / 2] = (WORD)(((DWORD)palettes) >> 8);
 }
 
-void drawRyu() {
-   setPalette(0, 2, &ryu);
-   Sprite* s = &sprites[0];
-   s->x = 220;
-   s->y = 100;
-   s->tile = 	4;
-   s->attributes = 2 |  0x5 << 12 | 0x3 << 8; // Use palette 2 dim 5+1x3+1 = 6x4 tiles
-
-   sprites[1].attributes	= 0xFF00; // Last sprite marker
-
-}
-
-//extern GFXShape helloworld;
-//extern Palette phelloworld;
+//void drawRyu() {
+//   setPalette(0, 2, &ryu);
+//   Sprite* s = &sprites[0];
+//   s->x = 220;
+//   s->y = 100;
+//   s->tile = 	4;
+//   s->attributes = 2 |  0x5 << 12 | 0x3 << 8; // Use palette 2 dim 5+1x3+1 = 6x4 tiles
 //
-//void drawHW() {
-////  setPalette(0, 2, &phelloworld);
-//  setPalette(0, 2, &ryu);
-//  int i = 0;
-//  for (; i < helloworld.numTiles; i++) {
-//     Sprite* s = &sprites[i];
-//     GFXShapeTile* t = &helloworld.tiles[i];
-//     s->x = 220 + t->x * 16;
-//     s->y = 100 + t->y * 16;
-//     s->tile = t->id;
-//     s->attributes = 2 |  0x5 << 1 | 0x3 << 1; // Use palette 2 dim 5+1x3+1 = 6x4 tiles
-//  }
-//  sprites[i].attributes	= 0xFF00; // Last sprite marker
+//   sprites[1].attributes	= 0xFF00; // Last sprite marker
 //
 //}
+
+extern GFXShape helloworld;
+extern Palette phelloworld;
+
+void drawHW() {
+  setPalette(0, 2, &phelloworld);
+//  setPalette(0, 2, &ryu);
+  int i = 0;
+  for (; i < helloworld.numTiles; i++) {
+     Sprite* s = &sprites[i];
+     GFXShapeTile* t = &(helloworld.tiles[i]);
+     s->x = 196 + t->x * 16;
+     s->y = 100 + t->y * 16;
+     s->tile = t->id;
+     s->attributes = 2 ;//|  0x5 << 1 | 0x3 << 1; // Use palette 2 dim 5+1x3+1 = 6x4 tiles
+  }
+  sprites[i].attributes	= 0xFF00; // Last sprite marker
+
+}
 
 void onVSync() {
 
@@ -105,8 +105,8 @@ void onVSync() {
    // cpsb_reg[0x13] = 0x12CE;
    //*((WORD*)0x00800166) = 0x12CE;
 
-    drawRyu();
-//   drawHW();
+//    drawRyu();
+   drawHW();
    cpsa_reg[0] = (WORD)(((DWORD)sprites) >> 8);
 
 
