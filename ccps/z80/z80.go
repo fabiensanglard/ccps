@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"ccps/boards"
+	"ccps/sites"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -18,9 +19,6 @@ const as = "sdasz80"
 const linker = "sdldz80"
 const objcopy = "objcopy"
 const dd = "dd"
-
-const SrcsPath = "cc/z80/"
-const objectDir = ".tmp/" + SrcsPath
 
 const ext_as = ".s"
 const ext_rel = ".rel"
@@ -110,7 +108,7 @@ func pad(input string) string {
 }
 
 func binarize(input string) string {
-	output := objectDir + "z80.rom"
+	output := sites.Z80ObjsDir + "z80.rom"
 	cmd := fmt.Sprintf("%s --input-target=ihex --output-target=binary %s %s", objcopy, input, output)
 	run(cmd)
 
@@ -143,21 +141,18 @@ func checkTools() {
 	checkExecutable(dd)
 
 	if verbose {
-		println("Creating folder", objectDir)
+		println("Creating folder", sites.Z80ObjsDir)
 	}
-	err := os.MkdirAll(objectDir, os.ModePerm)
-	if err != nil {
-		fmt.Println("Unable to create dir", objectDir)
-		os.Exit(1)
-	}
+
+	sites.EnsureZ80ObjsDir()
 }
 
 // cc/z80/*.as -> .tmp/cc/z80/*.rel
 func assemble() (error, []string) {
 
-	files, err := ioutil.ReadDir(SrcsPath)
+	files, err := ioutil.ReadDir(sites.Z80SrcsDir)
 	if err != nil {
-		println(fmt.Sprintf("Unable to read dir '%s'", SrcsPath))
+		println(fmt.Sprintf("Unable to read dir '%s'", sites.Z80SrcsDir))
 		os.Exit(1)
 	}
 
@@ -174,11 +169,11 @@ func assemble() (error, []string) {
 
 		basename := filepath.Base(src.Name())
 		name := strings.TrimSuffix(basename, filepath.Ext(basename))
-		output := objectDir + name + ext_rel
+		output := sites.Z80ObjsDir + name + ext_rel
 		cmd := fmt.Sprintf("%s -plogff -o %s %s",
 			as,
 			output,
-			SrcsPath+src.Name())
+			sites.Z80SrcsDir+src.Name())
 		run(cmd)
 
 		if verbose {
@@ -192,7 +187,7 @@ func assemble() (error, []string) {
 }
 
 func compile() (error, []string) {
-	files, err := ioutil.ReadDir(SrcsPath)
+	files, err := ioutil.ReadDir(sites.Z80SrcsDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -209,8 +204,8 @@ func compile() (error, []string) {
 
 		basename := filepath.Base(src.Name())
 		name := strings.TrimSuffix(basename, filepath.Ext(basename))
-		output := objectDir + name + ext_rel
-		input := SrcsPath + src.Name()
+		output := sites.Z80ObjsDir + name + ext_rel
+		input := sites.Z80SrcsDir + src.Name()
 		cmd := fmt.Sprintf("%s --compile-only -mz80 --data-loc 0xd000 --no-std-crt0 -o %s %s",
 			cc,
 			output,
@@ -232,7 +227,7 @@ func compile() (error, []string) {
 -e
 */
 func link(rels []string) (error, string) {
-	output := objectDir + "main.ihx"
+	output := sites.Z80ObjsDir + "main.ihx"
 	var linkerScript []string
 	linkerScript = append(linkerScript, "-mjwx")
 	linkerScript = append(linkerScript, fmt.Sprintf("-i %s", output))
@@ -249,7 +244,7 @@ func link(rels []string) (error, string) {
 
 	// Write linker file
 	mode := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-	lkPath := objectDir + "main.lk"
+	lkPath := sites.Z80ObjsDir + "main.lk"
 	file, err := os.OpenFile(lkPath, mode, 0644)
 	defer file.Close()
 	if err != nil {

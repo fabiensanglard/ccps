@@ -10,6 +10,7 @@ replace ccps/oki => ../oki
 replace ccps/gfx => ../gfx
 replace ccps/mus => ../mus
 replace ccps/sites => ../sites
+replace ccps/code => ../code
 
 require ccps/z80 v0.0.0-00010101000000-000000000000
 require ccps/m68k v0.0.0-00010101000000-000000000000
@@ -19,3 +20,4 @@ require ccps/oki v0.0.0-00010101000000-000000000000
 require ccps/gfx v0.0.0-00010101000000-000000000000
 require ccps/mus v0.0.0-00010101000000-000000000000
 require ccps/sites v0.0.0-00010101000000-000000000000
+require ccps/code v0.0.0-00010101000000-000000000000

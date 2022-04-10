@@ -3,6 +3,7 @@ package main
 import (
 	"ccps/boards"
 	"ccps/oki"
+	"ccps/sites"
 	"encoding/binary"
 	"flag"
 	"fmt"
@@ -42,7 +43,7 @@ func dumpSFX(args []string) {
 	rom := make([]byte, board.Oki.Size)
 	romCursor := 0
 	for _, inRom := range board.Oki.Roms {
-		path := "out/" + inRom.Filename
+		path := sites.OutDir + inRom.Filename
 		bytes, err := os.ReadFile(path)
 		if err != nil {
 			println(fmt.Sprintf("Unable to read '%s' (%s)", path, err))

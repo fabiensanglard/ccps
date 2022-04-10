@@ -2,6 +2,7 @@ package main
 
 import (
 	"ccps/boards"
+	"ccps/sites"
 	"flag"
 	"fmt"
 	"image"
@@ -181,7 +182,7 @@ func dumpsheet(path string, dim int, sheet []byte) {
 
 func desinterleave(srcs []boards.ROM, dst []byte) {
 	for _, rom := range srcs {
-		path := "out/" + rom.Filename
+		path := sites.OutDir + rom.Filename
 		content, err := ioutil.ReadFile(path)
 		if err != nil {
 			fmt.Println("Unable to open '", path, "'")

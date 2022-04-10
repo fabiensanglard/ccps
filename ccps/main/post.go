@@ -1,8 +1,7 @@
 package main
 
 import (
-	"ccps/m68k"
-	"ccps/z80"
+	"ccps/sites"
 	_ "embed"
 	"flag"
 	"fmt"
@@ -30,37 +29,37 @@ func post(args []string) {
 		os.Exit(1)
 	}
 
-	err := os.MkdirAll(m68k.SrcsPath, 0777)
+	err := os.MkdirAll(sites.M68kSrcsDir, 0777)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Unable to create m68K src dir '%s'", m68k.SrcsPath))
+		fmt.Println(fmt.Sprintf("Unable to create m68K src dir '%s'", sites.M68kSrcsDir))
 		os.Exit(1)
 	}
 
-	err = os.MkdirAll(z80.SrcsPath, 0777)
+	err = os.MkdirAll(sites.Z80SrcsDir, 0777)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Unable to create z80 src dir '%s'", m68k.SrcsPath))
+		fmt.Println(fmt.Sprintf("Unable to create z80 src dir '%s'", sites.Z80SrcsDir))
 		os.Exit(1)
 	}
 
-	m68kMain := m68k.SrcsPath + "main.c"
+	m68kMain := sites.M68kSrcsDir + "main.c"
 	if *verbose {
 		println("Creating", m68kMain)
 	}
 	os.WriteFile(m68kMain, srcM68kMain, 0677)
 
-	m68kCrt0 := m68k.SrcsPath + "crt0.s"
+	m68kCrt0 := sites.M68kSrcsDir + "crt0.s"
 	if *verbose {
 		println("Creating", m68kCrt0)
 	}
 	os.WriteFile(m68kCrt0, srcM68kCrt0, 0677)
 
-	z80Main := z80.SrcsPath + "main.c"
+	z80Main := sites.Z80SrcsDir + "main.c"
 	if *verbose {
 		println("Creating", z80Main)
 	}
 	os.WriteFile(z80Main, srcZ80Main, 0677)
 
-	z80Crt0 := z80.SrcsPath + "crt0.s"
+	z80Crt0 := sites.Z80SrcsDir + "crt0.s"
 	if *verbose {
 		println("Creating", z80Crt0)
 	}

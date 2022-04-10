@@ -3,10 +3,10 @@ package m68k
 import (
 	"bytes"
 	"ccps/boards"
+	"ccps/sites"
 	_ "embed"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,11 +15,6 @@ import (
 
 const cc = "m68k-linux-gnu-gcc"
 const as = "m68k-linux-gnu-as"
-
-//const objcopy = "m68k-linux-gnu-objcopy"
-
-const SrcsPath = "cc/68000/"
-const objectDir = ".tmp/" + SrcsPath
 
 const ext_as = ".s"
 const ext_obj = ".o"
@@ -58,13 +53,6 @@ func checkTools() {
 	}
 	checkExecutable(as)
 	checkExecutable(cc)
-	//checkExecutable(objcopy)
-
-	err := os.MkdirAll(objectDir, os.ModePerm)
-	if err != nil {
-		fmt.Println("Unable to create dir", objectDir)
-		os.Exit(1)
-	}
 }
 
 var verbose bool
@@ -74,6 +62,7 @@ func Build(v bool, b *boards.Board) []byte {
 	verbose = v
 	board = *b
 	checkTools()
+	sites.EnsureM68kObjsDir()
 
 	var objs []string
 
@@ -84,7 +73,16 @@ func Build(v bool, b *boards.Board) []byte {
 	}
 	objs = append(objs, asmed...)
 
-	err, cced := compile()
+	// Compile user provider source code
+	err, cced := compile(sites.M68kSrcsDir)
+	if err != nil {
+		println("Compiling error", err)
+		os.Exit(1)
+	}
+	objs = append(objs, cced...)
+
+	// Compile generated source code (GFX assets)
+	err, cced = compile(sites.M68kGenDir)
 	if err != nil {
 		println("Compiling error", err)
 		os.Exit(1)
@@ -108,40 +106,19 @@ func Build(v bool, b *boards.Board) []byte {
 	return rom
 }
 
-//func binarize(input string) string {
-//	// TODO Check rom size before padding it.
-//	// Get the size.
-//	fi, err := os.Stat(input)
-//	if err != nil {
-//		println(fmt.Sprintf("Error stating '%s': %v", input, err))
-//		os.Exit(1)
-//	}
-//
-//	// Make sure it is not too big.
-//	if fi.Size() > board.M68k.Size {
-//		fmt.Printf("68000 ROM is too big (%d bytes) max=%d bytes", fi.Size(), board.M68k.Size)
-//	}
-//
-//	output := objectDir + "game.rom"
-//	// TODO: Double check why we remove .data via -R
-//	cmd := fmt.Sprintf("%s --gap-fill=0xFF --pad-to=%d -R .data --output-target=binary %s %s", objcopy, board.M68k.Size, input, output)
-//	run(cmd)
-//	return output
-//}
-
 //go:embed cps1.lk
 var linkerScript []byte
 
 func link(objs []string) (error, string) {
-	lkPath := objectDir + "cps1.lk"
+	lkPath := sites.M68kObjsDir + "cps1.lk"
 	err := os.WriteFile(lkPath, linkerScript, 0644)
 	if err != nil {
 		println(fmt.Sprintf("Unable to write linker script '%s'", lkPath))
 		os.Exit(1)
 	}
 
-	mapDir := objectDir + "game.map"
-	output := objectDir + "game.a"
+	mapDir := sites.M68kObjsDir + "game.map"
+	output := sites.M68kObjsDir + "game.a"
 	cmd := fmt.Sprintf("%s -Llib -m68000 -Wall -nostartfiles -nodefaultlibs -fno-builtin -fomit-frame-pointer -ffast-math -Wl,-Map,%s -Wl,--build-id=none -T %s -o %s",
 		cc,
 		mapDir,
@@ -159,10 +136,11 @@ func link(objs []string) (error, string) {
 	return nil, output
 }
 
-func compile() (error, []string) {
-	files, err := ioutil.ReadDir(SrcsPath)
+func compile(dir string) (error, []string) {
+	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		log.Fatal(err)
+		println(err)
+		os.Exit(1)
 	}
 
 	var outputs []string
@@ -177,10 +155,11 @@ func compile() (error, []string) {
 
 		basename := filepath.Base(src.Name())
 		name := strings.TrimSuffix(basename, filepath.Ext(basename))
-		output := objectDir + name + ext_obj
-		input := SrcsPath + src.Name()
-		cmd := fmt.Sprintf("%s -m68000 -nostdlib -c -O0 -o %s %s",
+		output := sites.M68kObjsDir + name + ext_obj
+		input := dir + src.Name()
+		cmd := fmt.Sprintf("%s -I%s -m68000 -nostdlib -c -O0 -o %s %s",
 			cc,
+			sites.M68kGenDir,
 			output,
 			input)
 		run(cmd)
@@ -196,9 +175,9 @@ func compile() (error, []string) {
 }
 
 func assemble() (error, []string) {
-	files, err := ioutil.ReadDir(SrcsPath)
+	files, err := ioutil.ReadDir(sites.M68kSrcsDir)
 	if err != nil {
-		println(fmt.Sprintf("Unable to read dir '%s'", SrcsPath))
+		println(fmt.Sprintf("Unable to read dir '%s'", sites.M68kSrcsDir))
 		os.Exit(1)
 	}
 
@@ -215,11 +194,11 @@ func assemble() (error, []string) {
 
 		basename := filepath.Base(src.Name())
 		name := strings.TrimSuffix(basename, filepath.Ext(basename))
-		output := objectDir + name + ext_obj
+		output := sites.M68kObjsDir + name + ext_obj
 		cmd := fmt.Sprintf("%s -m68000 --register-prefix-optional -o %s %s",
 			as,
 			output,
-			SrcsPath+src.Name())
+			sites.M68kSrcsDir+src.Name())
 		run(cmd)
 
 		if verbose {

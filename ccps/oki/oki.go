@@ -2,13 +2,14 @@ package oki
 
 import (
 	"ccps/boards"
+	"ccps/code"
 	"ccps/sites"
 	"io/ioutil"
 	"os"
 	"strings"
 )
 
-func Build(v bool, board *boards.Board) []byte {
+func Build(v bool, board *boards.Board) ([]byte, *code.Code) {
 	verbose := v
 
 	files, err := ioutil.ReadDir(sites.SfxSrcPath)
@@ -16,7 +17,7 @@ func Build(v bool, board *boards.Board) []byte {
 		if verbose {
 			println("Unable to open sfx dir", sites.SfxSrcPath)
 		}
-		return nil
+		return nil, code.NewCode()
 	}
 
 	okiRom := NewOkiROM()
@@ -49,5 +50,8 @@ func Build(v bool, board *boards.Board) []byte {
 		okiRom.AddPhrase(adpcm)
 	}
 
-	return okiRom.genROM(board.Oki.Size)
+	// TODO: Generate Oki ID headers. Returning empty for now
+	okiIDHeader := code.NewCode()
+
+	return okiRom.genROM(board.Oki.Size), okiIDHeader
 }

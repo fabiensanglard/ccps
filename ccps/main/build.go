@@ -6,6 +6,7 @@ import (
 	"ccps/m68k"
 	"ccps/mus"
 	"ccps/oki"
+	"ccps/sites"
 	"ccps/z80"
 	"flag"
 	"fmt"
@@ -27,28 +28,34 @@ func build(args []string) {
 
 	board := boards.Get(*target)
 
-	// Create output folder
-	outputDir := "out/"
-	err := os.RemoveAll(outputDir)
-	err = os.MkdirAll(outputDir, 0777)
-	if err != nil {
-		fmt.Println(fmt.Sprintf("Unable to create dir '%s'", outputDir))
-		os.Exit(1)
-	}
+	// Create output folders where ROM and GFX/SFX/MFX source code will be generated
+	sites.EnsureOutDir()
+	sites.EnsureCodeGenDirs()
 
-	// OKI generates oki.rom and oki.h
-	okyRom := oki.Build(*verbose, board)
-	board.Oki.Epromer(okyRom, "out/")
+	// OKI generates oki.rom and oki.h (where the sound IDs are stored).
+	// oki.h must be imported not in Z80 but in m68k because this is where
+	// sound sample playback is decided.
+	okyRom, okiIDsHeader := oki.Build(*verbose, board)
+	board.Oki.Epromer(okyRom, sites.OutDir)
+	okiIDsHeader.WriteTo(sites.Z80GenDir + "okiIds.h")
 
-	// MUS generates mus.c
-	mus.Build(*verbose, board)
+	// MUS generates no ROM, only mus.c. This source file is to be added to
+	// the list of files to be compiled when creating z80.rom.
+	z80Code := mus.Build(*verbose, board)
+	z80Code.WriteTo(sites.Z80GenDir + "MFXz80.c")
+
+	//
 	z80Rom := z80.Build(*verbose, board)
-	board.Z80.Epromer(z80Rom, "out/")
+	board.Z80.Epromer(z80Rom, sites.OutDir)
 
-	gfxromPath := gfx.Build(*verbose, board)
-	board.GFX.Epromer(gfxromPath, "out/")
+	// The GFX builder returns a ROM containing the GFX assets
+	// but also a source code file containing tile IDs for the
+	// shapes and sprites along with palettes values.
+	gfxromPath, m68kCode := gfx.Build(*verbose, board)
+	board.GFX.Epromer(gfxromPath, sites.OutDir)
+	m68kCode.WriteTo(sites.M68kGenDir + "ccps_gfx.c")
 
 	// Needs oki.h, mus.c, gfx.c
 	m68kRom := m68k.Build(*verbose, board)
-	board.M68k.Epromer(m68kRom, "out/")
+	board.M68k.Epromer(m68kRom, sites.OutDir)
 }

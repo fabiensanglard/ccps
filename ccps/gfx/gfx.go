@@ -2,7 +2,9 @@ package gfx
 
 import (
 	"ccps/boards"
+	"ccps/code"
 	"ccps/sites"
+	_ "embed"
 	"fmt"
 	"image"
 	"image/color"
@@ -17,7 +19,8 @@ import (
 var verbose bool
 var board boards.Board
 
-const outDir = ".tmp/gfx/"
+//go:embed genSrc/ccps_gfx.h
+var gfxHeader []byte
 
 type gfxRegionType int
 
@@ -43,9 +46,25 @@ type gfxRegion struct {
 	sort  gfxRegionType
 }
 
-func Build(v bool, b *boards.Board) []byte {
+type TiledType int64
+
+const (
+	Sprite TiledType = 0
+	Shape            = 1
+)
+
+type Tiled struct {
+	name  string
+	alloc []Allocation
+	Type  TiledType
+	img   *image.Paletted
+}
+
+func Build(v bool, b *boards.Board) ([]byte, *code.Code) {
 	verbose = v
 	board = *b
+
+	ioutil.WriteFile(sites.M68kGenDir+"ccps_gfx.h", gfxHeader, 0644)
 
 	// TOOD Figure out Mame region size (e.g: STF29)
 	// See https://github.com/mamedev/mame/blob/master/src/mame/video/cps1.cpp#L1679
@@ -76,7 +95,7 @@ func Build(v bool, b *boards.Board) []byte {
 
 	// Test if there is a gfx src folder. If not, return null
 	if _, err := os.Stat(sites.GfxSrcPath); os.IsNotExist(err) {
-		return nil
+		return nil, code.NewCode()
 	}
 
 	var sizes [4]int
@@ -85,38 +104,46 @@ func Build(v bool, b *boards.Board) []byte {
 		sizes[region.sort] += size
 	}
 
+	// Allocate result
 	gfxRom := make([]byte, board.GFX.Size)
 	cursor := 0
+
+	// Allocate the Code where the C include will be
+	inc := code.NewCode()
+	inc.AddLine("#include \"ccps_gfx.h\"")
 	for i, path := range sites.GfxLayersPath {
 		// For every type of GFX assets (OBJ, SCR1, SCR2, SCR3)
 		// create a "sort rom".
-		rom := createGFX(path, sizes[i], gfxRegionType(i))
+		rom, code := createGFX(path, sizes[i], gfxRegionType(i))
+
 		// Add "sort rom" to "everything" GFX ROM
 		copy(gfxRom[cursor:], rom)
 		cursor += len(rom)
+
+		inc.AddLines(code)
 	}
 
-	// Write gfxrom to storage
-	// write the whole body at once
-	err := os.MkdirAll(outDir, os.ModePerm)
-	if err != nil {
-		fmt.Println("Unable to create dir", outDir)
-		os.Exit(1)
-	}
-	romPath := outDir + "gfx.rom"
-	err = ioutil.WriteFile(romPath, gfxRom, 0644)
-	if err != nil {
-		fmt.Println("Unable to write GFX rom to", romPath)
-		os.Exit(1)
-	}
+	// TODO, Delete all this? We write to storage and read it again?
+	//// Write gfxrom to storage
+	//err := os.MkdirAll(outDir, os.ModePerm)
+	//if err != nil {
+	//	fmt.Println("Unable to create dir", outDir)
+	//	os.Exit(1)
+	//}
+	//romPath := outDir + "gfx.rom"
+	//err = ioutil.WriteFile(romPath, gfxRom, 0644)
+	//if err != nil {
+	//	fmt.Println("Unable to write GFX rom to", romPath)
+	//	os.Exit(1)
+	//}
+	//
+	//rom, err := os.ReadFile(romPath)
+	//if err != nil {
+	//	println("Cannot read generated GFX ROM", err)
+	//	os.Exit(1)
+	//}
 
-	rom, err := os.ReadFile(romPath)
-	if err != nil {
-		println("Cannot read generated GFX ROM", err)
-		os.Exit(1)
-	}
-
-	return rom
+	return gfxRom, inc
 }
 
 func getTileDim(sort gfxRegionType) int {
@@ -137,7 +164,7 @@ func getTileDim(sort gfxRegionType) int {
 }
 
 // Visit all PNG in folder, find a free location and write them in rom
-func createGFX(srcsPath string, size int, sort gfxRegionType) []byte {
+func createGFX(srcsPath string, size int, sort gfxRegionType) ([]byte, *code.Code) {
 	var rom = make([]byte, size)
 	for i := 0; i < len(rom); i++ {
 		rom[i] = 0xFF
@@ -156,8 +183,11 @@ func createGFX(srcsPath string, size int, sort gfxRegionType) []byte {
 		if verbose {
 			println("Unable to open gfx dir", srcsPath)
 		}
-		return rom
+		return rom, nil
 	}
+
+	// Allocate the include receiver
+	inc := code.NewCode()
 
 	for _, file := range files {
 		if file.IsDir() {
@@ -175,15 +205,81 @@ func createGFX(srcsPath string, size int, sort gfxRegionType) []byte {
 			println("Processing image '", file.Name(), "'")
 		}
 
-		addGFX(srcsPath+"/"+file.Name(), rom, tileDim, allocator)
-		// TODO write palette to .h so 68000 can use it.
-		// TODO write either a sprite or a shape
+		tiled := addGFX(srcsPath, file.Name(), rom, tileDim, allocator)
+		lines := tiledToCode(tiled)
+		inc.AddLines(lines)
 	}
-	return rom
+	return rom, inc
 }
 
-func addGFX(src string, rom []byte, tileDim int, allocator *allocator) {
+// Convert tiled info to C code so it can be used by the 68000
+func tiledToCode(tiled Tiled) *code.Code {
+	src := code.NewCode()
 
+	if tiled.Type == Sprite {
+		cName := makeCFriendly(tiled.name)
+		src.AddLine(fmt.Sprintf("const GFXSprite %s = {", cName))
+		src.AddLine(fmt.Sprintf("     .height = %d,", tiled.img.Rect.Max.Y))
+		src.AddLine(fmt.Sprintf("     .width  = %d,", tiled.img.Rect.Max.X))
+		src.AddLine(fmt.Sprintf("     .id     = %d,", tiled.alloc[0].dst))
+		src.AddLine("}")
+
+		// Add palette for this sprite
+		src.SkipLine()
+		src.AddLines(paletteToC(tiled.name, tiled.img.Palette))
+
+		return src
+	}
+
+	if tiled.Type == Shape {
+		cName := makeCFriendly(tiled.name)
+		src.AddLine(fmt.Sprintf("const GFXShape %s = {", cName))
+		src.AddLine(fmt.Sprintf("     .numTiles = %d,", len(tiled.alloc)))
+		src.AddLine(fmt.Sprintf("     .tiles = {"))
+		for _, a := range tiled.alloc {
+			src.AddLine(fmt.Sprintf("     {.x  = %d, .y = %d, .id = %d},", a.srcXTile, a.srcYTile, a.dst))
+		}
+		src.AddLine(fmt.Sprintf("     }"))
+		src.AddLine(fmt.Sprintf("};"))
+
+		// Add palette for this shape
+		src.SkipLine()
+		src.AddLines(paletteToC(tiled.name, tiled.img.Palette))
+
+		return src
+	}
+
+	// TODO Fail here
+	println(fmt.Sprintf("Cannot convert tile to code (type %d not handled)", tiled.Type))
+	os.Exit(1)
+	return nil // Never reached
+}
+
+func paletteToC(name string, palette color.Palette) *code.Code {
+	c := code.NewCode()
+	paletteCode := ""
+	for _, color := range palette {
+		r, g, b, a := color.RGBA()
+		a <<= 4
+		r = r >> 4
+		g = (g >> 4) << 4
+		b = b & 0xF
+		paletteCode += fmt.Sprintf("0x%02X%02X,", byte(a|r), byte(g|b))
+	}
+	c.AddLine(fmt.Sprintf("const Palette p%s = {%s};\n", makeCFriendly(name), paletteCode))
+	return c
+}
+
+func makeCFriendly(name string) string {
+	ext := filepath.Ext(name)
+	name = strings.Replace(name, ext, "", -1)
+	name = strings.Replace(name, ".", "", -1)
+	return name
+}
+
+func addGFX(dir string, filename string, rom []byte, tileDim int, allocator *allocator) Tiled {
+
+	src := dir + filename
 	file, err := os.Open(src)
 	if err != nil {
 		println("Unable to open file '", src, "'")
@@ -207,15 +303,15 @@ func addGFX(src string, rom []byte, tileDim int, allocator *allocator) {
 		}
 	}
 
-	i, _ := img.(*image.Paletted)
-	if len(i.Palette) > 16 {
-		println("Image '", src, "' has more than 16 colors (", len(i.Palette), "'")
+	pimg, _ := img.(*image.Paletted)
+	if len(pimg.Palette) > 16 {
+		println("Image '", src, "' has more than 16 colors (", len(pimg.Palette), "'")
 		os.Exit(1)
 	}
 
 	// Make sure transparency if properly set (index is 15).
 	transparentIndex := uint8(0)
-	for i, c := range i.Palette {
+	for i, c := range pimg.Palette {
 		_, _, _, a := c.RGBA()
 		if a == 0 {
 			transparentIndex = uint8(i)
@@ -224,25 +320,36 @@ func addGFX(src string, rom []byte, tileDim int, allocator *allocator) {
 	}
 
 	if transparentIndex != 15 {
-		makeTransparent15(i, transparentIndex)
+		makeTransparent15(pimg, transparentIndex)
 	}
 
 	// Round up dimension so it perfectly matches tiles layout
-	adjustRectToTile(i, tileDim)
+	adjustRectToTile(pimg, tileDim)
 
 	// Image is ready. Write it to ROM
-	filename := filepath.Base(src)
 	var allocations []Allocation
-	if unicode.IsUpper(rune(filename[0])) {
+	var tiledType TiledType
+	if unicode.IsUpper(rune(filepath.Base(src)[0])) {
 		// This is a sprite (rectangular shape)
-		allocations = allocateSprite(allocator, i, tileDim)
+		allocations = allocateSprite(allocator, pimg, tileDim)
+		tiledType = Sprite
 	} else {
 		// This is a shape (collection of tiles)
-		allocations = allocateShape(allocator, i, tileDim)
+		allocations = allocateShape(allocator, pimg, tileDim)
+		tiledType = Shape
 	}
 
 	// Write tiles according to allocated tiles destinations
-	writeTiles(i, allocations, rom, tileDim)
+	writeTiles(pimg, allocations, rom, tileDim)
+
+	// Return where the sprite tiles were allocated so the C file index for the 68000
+	// can be generated.
+	var tiled Tiled
+	tiled.name = filename
+	tiled.alloc = allocations
+	tiled.Type = tiledType
+	tiled.img = pimg
+	return tiled
 }
 
 func adjustRectToTile(img *image.Paletted, tileDim int) {

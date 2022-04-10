@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ccps/sites"
 	"flag"
 	"io/ioutil"
 	"log"
@@ -27,7 +28,7 @@ func install(args []string) {
 		outDir = outDir + "/"
 	}
 
-	srcDir := "out/"
+	srcDir := sites.OutDir
 	files, err := ioutil.ReadDir(srcDir)
 	if err != nil {
 		log.Fatal(err)
