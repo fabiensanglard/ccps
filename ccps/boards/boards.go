@@ -40,6 +40,7 @@ type Board struct {
 	Z80      ROMSet
 	M68k     ROMSet
 	Oki      ROMSet
+	Cpsb     int // Version of CPS-B
 }
 
 func Get(name string) *Board {
@@ -55,6 +56,9 @@ var boards []Board
 
 func sf2Board() *Board {
 	sf2 := Board{}
+
+	sf2.Cpsb = 11
+
 	sf2.Z80.Size = 65_536
 	sf2.Z80.Epromer = sf2Z80EPromer
 

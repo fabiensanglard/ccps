@@ -51,9 +51,16 @@ func build(args []string) {
 	// The GFX builder returns a ROM containing the GFX assets
 	// but also a source code file containing tile IDs for the
 	// shapes and sprites along with palettes values.
-	gfxromPath, m68kCode := gfx.Build(*verbose, board)
+	gfxromPath, m68kDec, m68kDef := gfx.Build(*verbose, board)
 	board.GFX.Epromer(gfxromPath, sites.OutDir)
-	m68kCode.WriteTo(sites.M68kGenDir + "ccps_gfx.c")
+	m68kDec.WriteTo(sites.M68kGenDir + "gfx.c")
+	m68kDef.WriteTo(sites.M68kGenDir + "gfx.h")
+
+	// Generate cpsa and cpsb header
+	cpsAHeader := gfx.GenCpsAHeader(*verbose, board)
+	cpsAHeader.WriteTo(sites.M68kGenDir + "cpsa.h")
+	cpsBHeader := gfx.GenCpsBHeader(*verbose, board)
+	cpsBHeader.WriteTo(sites.M68kGenDir + "cpsb.h")
 
 	// Needs oki.h, mus.c, gfx.c
 	m68kRom := m68k.Build(*verbose, board)

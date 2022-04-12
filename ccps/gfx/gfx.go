@@ -60,7 +60,7 @@ type Tiled struct {
 	img   *image.Paletted
 }
 
-func Build(v bool, b *boards.Board) ([]byte, *code.Code) {
+func Build(v bool, b *boards.Board) ([]byte, *code.Code, *code.Code) {
 	verbose = v
 	board = *b
 
@@ -95,7 +95,7 @@ func Build(v bool, b *boards.Board) ([]byte, *code.Code) {
 
 	// Test if there is a gfx src folder. If not, return null
 	if _, err := os.Stat(sites.GfxSrcPath); os.IsNotExist(err) {
-		return nil, code.NewCode()
+		return nil, code.NewCode(), code.NewCode()
 	}
 
 	var sizes [4]int
@@ -108,42 +108,28 @@ func Build(v bool, b *boards.Board) ([]byte, *code.Code) {
 	gfxRom := make([]byte, board.GFX.Size)
 	cursor := 0
 
-	// Allocate the Code where the C include will be
-	inc := code.NewCode()
-	inc.AddLine("#include \"ccps_gfx.h\"")
+	// Allocate the Code where the gfx sprite and shapes definition will be
+	defs := code.NewCode()
+	defs.AddLine("#include \"ccps_gfx.h\"")
+
+	// Allocate the Code where the gfx sprite and shapes declaration will be
+	decs := code.NewCode()
+	decs.AddLine("#include \"ccps_gfx.h\"")
+
 	for i, path := range sites.GfxLayersPath {
 		// For every type of GFX assets (OBJ, SCR1, SCR2, SCR3)
 		// create a "sort rom".
-		rom, code := createGFX(path, sizes[i], gfxRegionType(i))
+		rom, d, f := createGFX(path, sizes[i], gfxRegionType(i))
 
 		// Add "sort rom" to "everything" GFX ROM
 		copy(gfxRom[cursor:], rom)
 		cursor += len(rom)
 
-		inc.AddLines(code)
+		defs.AddLines(d)
+		decs.AddLines(f)
 	}
 
-	// TODO, Delete all this? We write to storage and read it again?
-	//// Write gfxrom to storage
-	//err := os.MkdirAll(outDir, os.ModePerm)
-	//if err != nil {
-	//	fmt.Println("Unable to create dir", outDir)
-	//	os.Exit(1)
-	//}
-	//romPath := outDir + "gfx.rom"
-	//err = ioutil.WriteFile(romPath, gfxRom, 0644)
-	//if err != nil {
-	//	fmt.Println("Unable to write GFX rom to", romPath)
-	//	os.Exit(1)
-	//}
-	//
-	//rom, err := os.ReadFile(romPath)
-	//if err != nil {
-	//	println("Cannot read generated GFX ROM", err)
-	//	os.Exit(1)
-	//}
-
-	return gfxRom, inc
+	return gfxRom, defs, decs
 }
 
 func getTileDim(sort gfxRegionType) int {
@@ -164,7 +150,7 @@ func getTileDim(sort gfxRegionType) int {
 }
 
 // Visit all PNG in folder, find a free location and write them in rom
-func createGFX(srcsPath string, size int, sort gfxRegionType) ([]byte, *code.Code) {
+func createGFX(srcsPath string, size int, sort gfxRegionType) ([]byte, *code.Code, *code.Code) {
 	var rom = make([]byte, size)
 	for i := 0; i < len(rom); i++ {
 		rom[i] = 0xFF
@@ -183,11 +169,12 @@ func createGFX(srcsPath string, size int, sort gfxRegionType) ([]byte, *code.Cod
 		if verbose {
 			println("Unable to open gfx dir", srcsPath)
 		}
-		return rom, nil
+		return rom, nil, nil
 	}
 
 	// Allocate the include receiver
-	inc := code.NewCode()
+	dec := code.NewCode()
+	def := code.NewCode()
 
 	for _, file := range files {
 		if file.IsDir() {
@@ -206,14 +193,36 @@ func createGFX(srcsPath string, size int, sort gfxRegionType) ([]byte, *code.Cod
 		}
 
 		tiled := addGFX(srcsPath, file.Name(), rom, tileDim, allocator)
-		lines := tiledToCode(tiled)
-		inc.AddLines(lines)
+		def.AddLines(tiledToDef(tiled))
+		dec.AddLines(tiledToDec(tiled))
 	}
-	return rom, inc
+	return rom, dec, def
 }
 
 // Convert tiled info to C code so it can be used by the 68000
-func tiledToCode(tiled Tiled) *code.Code {
+func tiledToDef(tiled Tiled) *code.Code {
+	src := code.NewCode()
+	if tiled.Type == Sprite {
+		cName := makeCFriendly(tiled.name)
+		src.AddLine(fmt.Sprintf("extern const GFXSprite %s;", cName))
+		src.AddLines(paletteToDef(tiled.name))
+		return src
+	}
+
+	if tiled.Type == Shape {
+		cName := makeCFriendly(tiled.name)
+		src.AddLine(fmt.Sprintf("extern const GFXShape %s;", cName))
+		src.AddLines(paletteToDef(tiled.name))
+		return src
+	}
+
+	println(fmt.Sprintf("Cannot convert tile to def (type %d not handled)", tiled.Type))
+	os.Exit(1)
+	return nil // Never reached
+}
+
+// Convert tiled info to C declaration so it can be used by the 68000
+func tiledToDec(tiled Tiled) *code.Code {
 	src := code.NewCode()
 
 	if tiled.Type == Sprite {
@@ -226,7 +235,7 @@ func tiledToCode(tiled Tiled) *code.Code {
 
 		// Add palette for this sprite
 		src.SkipLine()
-		src.AddLines(paletteToC(tiled.name, tiled.img.Palette))
+		src.AddLines(paletteToDec(tiled.name, tiled.img.Palette))
 
 		return src
 	}
@@ -244,18 +253,23 @@ func tiledToCode(tiled Tiled) *code.Code {
 
 		// Add palette for this shape
 		src.SkipLine()
-		src.AddLines(paletteToC(tiled.name, tiled.img.Palette))
+		src.AddLines(paletteToDec(tiled.name, tiled.img.Palette))
 
 		return src
 	}
 
-	// TODO Fail here
-	println(fmt.Sprintf("Cannot convert tile to code (type %d not handled)", tiled.Type))
+	println(fmt.Sprintf("Cannot convert tile to dec (type %d not handled)", tiled.Type))
 	os.Exit(1)
 	return nil // Never reached
 }
 
-func paletteToC(name string, palette color.Palette) *code.Code {
+func paletteToDef(name string) *code.Code {
+	c := code.NewCode()
+	c.AddLine(fmt.Sprintf("extern const Palette p%s;\n", makeCFriendly(name)))
+	return c
+}
+
+func paletteToDec(name string, palette color.Palette) *code.Code {
 	c := code.NewCode()
 	paletteCode := ""
 	for _, color := range palette {
@@ -540,4 +554,23 @@ func makeTransparent15(img *image.Paletted, transpIndex uint8) {
 
 	palette[15] = color.RGBA{R: 255, G: 255, B: 255, A: 0}
 	img.Palette = palette
+}
+
+//go:embed cps/cpsa.h
+var cpsaHeader []byte
+
+func GenCpsAHeader(v bool, b *boards.Board) *code.Code {
+	code := code.NewCode()
+	code.AddLine(string(cpsaHeader))
+	return code
+}
+
+//go:embed cps/cpsb.h
+var cpsbHeader []byte
+
+func GenCpsBHeader(v bool, b *boards.Board) *code.Code {
+
+	code := code.NewCode()
+	code.AddLine(string(cpsbHeader))
+	return code
 }

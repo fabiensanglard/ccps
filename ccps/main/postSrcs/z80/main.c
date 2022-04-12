@@ -30,7 +30,7 @@ void main() {
 		continue;
 	  }
 
-	  OKI = 0x80 | latch;
-      OKI = 0x81;
+	  OKI = 0x80 | latch; // First bit must be 1 then sound ID.
+      OKI = 0x80; // 0x80 = Channel 4  !   0x00 = No sound reduction.
    }
 }

@@ -19,37 +19,38 @@ var stepTable = [...]int16{
 	724, 796, 876, 963, 1060, 1166, 1282, 1411,
 	1552}
 
-func oki_step(step byte, history *int16, step_hist *byte) int16 {
+func oki_step(step byte, lastSample *int16, lastStep *byte) int16 {
 
-	var deltaTable = [...]int8{
+	var deltaTable = [...]int16{
 		1, 3, 5, 7, 9, 11, 13, 15,
 		-1, -3, -5, -7, -9, -11, -13, -15}
 
-	var adjustTable = [...]int8{
+	var adjustFactor = [...]int8{
 		-1, -1, -1, -1, 2, 4, 6, 8}
 
-	stepSize := stepTable[*step_hist]
-	delta := int16(deltaTable[step&15]) * stepSize / 8
-	out := *history + delta
+	stepSize := stepTable[*lastStep]
+	delta := deltaTable[step&15] * stepSize / 8
+	out := *lastSample + delta
 	out = int16(CLAMP(int(out), -2048, 2047))
-	*history = out
-	adjustedStep := int8(int(*step_hist) + int(adjustTable[step&7]))
-	*step_hist = byte(CLAMP(int(adjustedStep), 0, len(stepTable)-1))
+	*lastSample = out
+
+	// Adjust step
+	adjustedStep := int8(int(*lastStep) + int(adjustFactor[step&7]))
+	*lastStep = byte(CLAMP(int(adjustedStep), 0, len(stepTable)-1))
 
 	return out
 }
 
-func oki_encode_step(sample byte, history *int16, step_hist *byte) byte {
-	step_size := stepTable[*step_hist]
-	delta := int16(sample) - *history
+func oki_encode_step(sample byte, lastSample *int16, lastStep *byte) byte {
+	step_size := stepTable[*lastStep]
+	delta := int16(sample) - *lastSample
 
-	var adpcm_sample byte
+	var adpcm_sample byte = 0
 	if delta < 0 {
-		adpcm_sample = 8
-	} else {
-		adpcm_sample = 0
+		adpcm_sample = 0x8 // Set bit 4 to 1
 	}
 
+	// delta = abs(delta)
 	if delta < 0 {
 		delta = -delta
 	}
@@ -61,49 +62,42 @@ func oki_encode_step(sample byte, history *int16, step_hist *byte) byte {
 		}
 		step_size >>= 1
 	}
-	oki_step(adpcm_sample, history, step_hist)
+	oki_step(adpcm_sample, lastSample, lastStep)
 	return adpcm_sample
 }
 
 func PCMtoADPCM(wav []byte) []byte {
-	history := int16(0)
-	step_hist := byte(0)
-	buf_sample := byte(0)
-	nibble := 0
+	lastSample := int16(0)
+	lastStep := byte(0)
+
+	if len(wav)%2 == 1 {
+		wav = append(wav, wav[len(wav)-1])
+	}
 
 	adpcm := make([]byte, len(wav)/2)
 	adpcmCursor := 0
 
-	for i := 0; i < len(wav); i++ {
-		sample := wav[i]
-		step := oki_encode_step(sample, &history, &step_hist)
-		if nibble > 0 {
-			adpcm[adpcmCursor] = buf_sample | (step & 0xF)
-			adpcmCursor++
-		} else {
-			buf_sample = (step & 0xF) << 4
-		}
-		nibble ^= 1
+	for i := 0; i < len(wav); i += 2 {
+		nibble1 := oki_encode_step(wav[i], &lastSample, &lastStep) & 0xF
+		nibble2 := oki_encode_step(wav[i+1], &lastSample, &lastStep) & 0xF
+		adpcm[adpcmCursor] = nibble1<<4 | nibble2
+		adpcmCursor++
 	}
 	return adpcm
 }
 
 func ADPCMToPCM(adpcm []byte) []byte {
-	history := int16(0)
-	step_hist := byte(0)
-	nibble := byte(0)
+	lastSample := int16(0)
+	lastStep := byte(0)
 
 	pcm := make([]byte, len(adpcm)*2)
 	pcmCursor := 0
 	adpcmCursor := 0
 	for i := 0; i < len(adpcm); i++ {
-		step := adpcm[adpcmCursor] << nibble
-		step >>= 4
-		if nibble != 0 {
-			adpcmCursor++
-		}
-		nibble ^= 4
-		pcm[pcmCursor] = byte(oki_step(step, &history, &step_hist))
+		twoNibbles := adpcm[adpcmCursor]
+		pcm[pcmCursor] = byte(oki_step(twoNibbles>>4, &lastSample, &lastStep))
+		pcmCursor++
+		pcm[pcmCursor] = byte(oki_step(twoNibbles&0xF, &lastSample, &lastStep))
 		pcmCursor++
 	}
 

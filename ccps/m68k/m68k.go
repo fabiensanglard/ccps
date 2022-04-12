@@ -157,8 +157,9 @@ func compile(dir string) (error, []string) {
 		name := strings.TrimSuffix(basename, filepath.Ext(basename))
 		output := sites.M68kObjsDir + name + ext_obj
 		input := dir + src.Name()
-		cmd := fmt.Sprintf("%s -I%s -m68000 -nostdlib -c -O0 -o %s %s",
+		cmd := fmt.Sprintf("%s -DCPSB_VERSION=%d -I%s -m68000 -nostdlib -c -O0 -o %s %s",
 			cc,
+			board.Cpsb,
 			sites.M68kGenDir,
 			output,
 			input)
