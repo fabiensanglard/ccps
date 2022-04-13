@@ -78,18 +78,19 @@ func writeWav(path string, pcm []int16) {
 
 	// fmt Chunk
 	copy(wav[12:16], "fmt ")
-	binary.LittleEndian.PutUint32(wav[16:20], 16)      // Subchunk1Size
-	binary.LittleEndian.PutUint16(wav[20:22], 1)       // Format code PCM=0x0001
-	binary.LittleEndian.PutUint16(wav[22:24], 1)       // Num Channels
-	binary.LittleEndian.PutUint32(wav[24:28], 7575)    // Sampling rate
-	binary.LittleEndian.PutUint32(wav[28:32], 7575*16) // Byte rate SampleRate * NumChannels * BitsPerSample/8
-	binary.LittleEndian.PutUint16(wav[32:34], 2)       // Block Align (NumChannels * BitsPerSample/8)
-	binary.LittleEndian.PutUint16(wav[34:36], 16)      // Bits per sample
+	binary.LittleEndian.PutUint32(wav[16:20], 16)     // Subchunk1Size
+	binary.LittleEndian.PutUint16(wav[20:22], 1)      // Format code PCM=0x0001
+	binary.LittleEndian.PutUint16(wav[22:24], 1)      // Num Channels
+	binary.LittleEndian.PutUint32(wav[24:28], 7575)   // Sampling rate
+	binary.LittleEndian.PutUint32(wav[28:32], 7575*2) // Byte rate SampleRate * NumChannels * BitsPerSample/8
+	binary.LittleEndian.PutUint16(wav[32:34], 2)      // Block Align (NumChannels * BitsPerSample/8)
+	binary.LittleEndian.PutUint16(wav[34:36], 16)     // Bits per sample
 
 	// data Chunk
 	copy(wav[36:40], "data")
-	binary.LittleEndian.PutUint32(wav[40:44], uint32(len(pcm))) // Sampling rate
-	copy(wav[44:], toByteArray(pcm))
+	payload := toByteArray(pcm)
+	binary.LittleEndian.PutUint32(wav[40:44], uint32(len(payload))) // Sampling rate
+	copy(wav[44:], payload)
 
 	err := os.WriteFile(path, wav, 0644)
 	if err != nil {
