@@ -1,105 +1,116 @@
 package oki
 
-func CLAMP(x int, low int, high int) int {
-	if x > high {
-		return high
-	}
-	if x < low {
-		return low
-	}
-	return x
+var stepSizes = [...]int16{
+	16, 17, 19, 21, 23, 25, 28, 31, 34, 37,
+	41, 45, 50, 55, 60, 66, 73, 80, 88, 97,
+	107, 118, 130, 143, 157, 173, 190, 209, 230, 253,
+	279, 307, 337, 371, 408, 449, 494, 544, 598, 658,
+	724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552}
+
+var adjustFactor = [...]int16{
+	-1, -1, -1, -1, 2, 4, 6, 8}
+
+type codec struct {
+	lastSample int16
+	stepIndex  int16
 }
 
-var stepTable = [...]int16{
-	16, 17, 19, 21, 23, 25, 28, 31,
-	34, 37, 41, 45, 50, 55, 60, 66,
-	73, 80, 88, 97, 107, 118, 130, 143,
-	157, 173, 190, 209, 230, 253, 279, 307,
-	337, 371, 408, 449, 494, 544, 598, 658,
-	724, 796, 876, 963, 1060, 1166, 1282, 1411,
-	1552}
+func (c *codec) encodeStep(sample int16) byte {
+	ss := stepSizes[c.stepIndex]
+	diff := sample - c.lastSample
+	code := byte(0x0)
+	sample >>= 3 // Algo uses 12-bit input
 
-func oki_step(step byte, lastSample *int16, lastStep *byte) int16 {
+	if diff < 0 {
+		diff = -diff
+		code = 0x8
+	}
 
-	var deltaTable = [...]int16{
-		1, 3, 5, 7, 9, 11, 13, 15,
-		-1, -3, -5, -7, -9, -11, -13, -15}
+	if diff >= ss {
+		diff -= ss
+		code |= 0x4
+	}
 
-	var adjustFactor = [...]int8{
-		-1, -1, -1, -1, 2, 4, 6, 8}
+	if diff >= (ss >> 1) {
+		diff -= ss >> 1
+		code |= 0x2
+	}
 
-	stepSize := stepTable[*lastStep]
-	delta := deltaTable[step&15] * stepSize / 8
-	out := *lastSample + delta
-	out = int16(CLAMP(int(out), -2048, 2047))
-	*lastSample = out
+	if diff >= (ss >> 2) {
+		code |= 0x1
+	}
 
-	// Adjust step
-	adjustedStep := int8(int(*lastStep) + int(adjustFactor[step&7]))
-	*lastStep = byte(CLAMP(int(adjustedStep), 0, len(stepTable)-1))
+	c.lastSample = c.decodeStep(code)
 
-	return out
+	return code
 }
 
-func oki_encode_step(sample byte, lastSample *int16, lastStep *byte) byte {
-	step_size := stepTable[*lastStep]
-	delta := int16(sample) - *lastSample
-
-	var adpcm_sample byte = 0
-	if delta < 0 {
-		adpcm_sample = 0x8 // Set bit 4 to 1
-	}
-
-	// delta = abs(delta)
-	if delta < 0 {
-		delta = -delta
-	}
-
-	for bit := 2; bit >= 0; bit-- {
-		if delta >= step_size {
-			adpcm_sample |= (1 << bit)
-			delta -= step_size
-		}
-		step_size >>= 1
-	}
-	oki_step(adpcm_sample, lastSample, lastStep)
-	return adpcm_sample
-}
-
-func PCMtoADPCM(wav []byte) []byte {
-	lastSample := int16(0)
-	lastStep := byte(0)
-
-	if len(wav)%2 == 1 {
-		wav = append(wav, wav[len(wav)-1])
-	}
-
-	adpcm := make([]byte, len(wav)/2)
-	adpcmCursor := 0
-
-	for i := 0; i < len(wav); i += 2 {
-		nibble1 := oki_encode_step(wav[i], &lastSample, &lastStep) & 0xF
-		nibble2 := oki_encode_step(wav[i+1], &lastSample, &lastStep) & 0xF
-		adpcm[adpcmCursor] = nibble1<<4 | nibble2
-		adpcmCursor++
+func (c *codec) encode(pcm []int16) []byte {
+	cursor := 0
+	adpcm := make([]byte, len(pcm)/2)
+	for i := 0; i < len(pcm); i += 2 {
+		msb := c.encodeStep(pcm[i]) & 0xF
+		lsb := c.encodeStep(pcm[i+1]) & 0xF
+		adpcm[cursor] = (msb << 4) | lsb
+		cursor++
 	}
 	return adpcm
 }
 
-func ADPCMToPCM(adpcm []byte) []byte {
-	lastSample := int16(0)
-	lastStep := byte(0)
+func (c *codec) decodeStep(code byte) int16 {
+	ss := stepSizes[c.stepIndex]
+	delta := ((int16(code&0x7)*2 + 1) * ss) >> 3
 
-	pcm := make([]byte, len(adpcm)*2)
-	pcmCursor := 0
-	adpcmCursor := 0
-	for i := 0; i < len(adpcm); i++ {
-		twoNibbles := adpcm[adpcmCursor]
-		pcm[pcmCursor] = byte(oki_step(twoNibbles>>4, &lastSample, &lastStep))
-		pcmCursor++
-		pcm[pcmCursor] = byte(oki_step(twoNibbles&0xF, &lastSample, &lastStep))
-		pcmCursor++
+	if code&0x8 != 0 {
+		delta = -delta
 	}
 
+	sample := int16(c.lastSample) + delta
+
+	if sample < -2048 {
+		sample = -2046
+	}
+	if sample > 2047 {
+		sample = 2047
+	}
+
+	c.nextStepIdx(code)
+	c.lastSample = sample
+	return sample
+}
+
+func (c *codec) nextStepIdx(code byte) {
+	c.stepIndex += adjustFactor[code&0x7]
+
+	if c.stepIndex < 0 {
+		c.stepIndex = 0
+	}
+
+	if c.stepIndex > 48 {
+		c.stepIndex = 48
+	}
+}
+
+func (c *codec) decode(adpcm []byte) []int16 {
+	pcm := make([]int16, len(adpcm)*2)
+	cursor := 0
+	for i := 0; i < len(adpcm); i++ {
+		pcm[cursor] = c.decodeStep(adpcm[i] >> 4)
+		cursor += 1
+		pcm[cursor] = c.decodeStep(adpcm[i] & 0xf)
+		cursor += 1
+	}
 	return pcm
+}
+
+// https://github.com/nth-eye/vox/blob/main/src/vox.c
+
+func PCMtoADPCM(wav []int16) []byte {
+	var adpcm = codec{}
+	return adpcm.encode(wav)
+}
+
+func ADPCMToPCM(adpcm []byte) []int16 {
+	var codec = codec{}
+	return codec.decode(adpcm)
 }

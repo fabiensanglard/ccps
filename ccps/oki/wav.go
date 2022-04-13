@@ -21,7 +21,7 @@ type WaveFmt struct {
 type Wav struct {
 	header WaveHeader
 	fmt    WaveFmt
-	data   []byte
+	data   []int16
 }
 
 type WaveHeader struct {
@@ -100,8 +100,8 @@ func LoadWav(path string) (*Wav, error) {
 	wav.fmt.BlockAlign = binary.LittleEndian.Uint16(data[20:22])
 
 	wav.fmt.BitsPerSample = binary.LittleEndian.Uint16(data[22:24])
-	if 8 != wav.fmt.BitsPerSample {
-		println(fmt.Sprintf("Unexpected NumChannels in '%s' (%d) MUST be 8", path, wav.fmt.BitsPerSample))
+	if 16 != wav.fmt.BitsPerSample {
+		println(fmt.Sprintf("Unexpected BitPerSample in '%s' (%d) MUST be 16", path, wav.fmt.BitsPerSample))
 		os.Exit(1)
 	}
 
@@ -114,16 +114,31 @@ func LoadWav(path string) (*Wav, error) {
 	}
 
 	dataLength := binary.LittleEndian.Uint32(data[4:8])
-	wav.data = data[8:]
+	payload := data[8:]
+	if len(payload)%2 == 1 {
+		payload = append(payload, payload[len(payload)-1])
+	}
+
+	wav.data = toArray16(payload)
 	// Not all the rest of the file is PCM. If the payload has uneven bytes number, it
 	// is padded with either a 0 or a 1 at the end. Slice accordingly
 	if dataLength%2 != 0 {
 		wav.data = wav.data[:len(wav.data)-1]
 	}
-	if dataLength != uint32(len(wav.data)) {
-		println(fmt.Sprintf("Bad data chunk size '%d' but expected '%d'"), dataLength, len(wav.data))
-		os.Exit(1)
-	}
+	//if dataLength != uint32(len(wav.data)) {
+	//	println(fmt.Sprintf("Bad data chunk size '%d' but expected '%d'"), dataLength, len(wav.data))
+	//	os.Exit(1)
+	//}
 
 	return &wav, nil
+}
+
+func toArray16(payload []byte) []int16 {
+	wav := make([]int16, len(payload)/2)
+	cursor := 0
+	for i := 0; i < len(payload)-3; i += 2 {
+		wav[cursor] = int16(binary.LittleEndian.Uint16(payload[i : i+2]))
+		cursor++
+	}
+	return wav
 }

@@ -67,7 +67,7 @@ func dumpSFX(args []string) {
 	}
 }
 
-func writeWav(path string, pcm []byte) {
+func writeWav(path string, pcm []int16) {
 	const wavHeaderSize = 0
 	wav := make([]byte, wavHeaderSize+len(pcm))
 
@@ -78,22 +78,32 @@ func writeWav(path string, pcm []byte) {
 
 	// fmt Chunk
 	copy(wav[12:16], "fmt ")
-	binary.LittleEndian.PutUint32(wav[16:20], 16)   // Subchunk1Size
-	binary.LittleEndian.PutUint16(wav[20:22], 1)    // Format code PCM=0x0001
-	binary.LittleEndian.PutUint16(wav[22:24], 1)    // Num Channels
-	binary.LittleEndian.PutUint32(wav[24:28], 7575) // Sampling rate
-	binary.LittleEndian.PutUint32(wav[28:32], 7575) // Byte rate SampleRate * NumChannels * BitsPerSample/8
-	binary.LittleEndian.PutUint16(wav[32:34], 1)    // Block Align (NumChannels * BitsPerSample/8)
-	binary.LittleEndian.PutUint16(wav[34:36], 8)    // Bits per sample
+	binary.LittleEndian.PutUint32(wav[16:20], 16)      // Subchunk1Size
+	binary.LittleEndian.PutUint16(wav[20:22], 1)       // Format code PCM=0x0001
+	binary.LittleEndian.PutUint16(wav[22:24], 1)       // Num Channels
+	binary.LittleEndian.PutUint32(wav[24:28], 7575)    // Sampling rate
+	binary.LittleEndian.PutUint32(wav[28:32], 7575*16) // Byte rate SampleRate * NumChannels * BitsPerSample/8
+	binary.LittleEndian.PutUint16(wav[32:34], 2)       // Block Align (NumChannels * BitsPerSample/8)
+	binary.LittleEndian.PutUint16(wav[34:36], 16)      // Bits per sample
 
 	// data Chunk
 	copy(wav[36:40], "data")
 	binary.LittleEndian.PutUint32(wav[40:44], uint32(len(pcm))) // Sampling rate
-	copy(wav[44:], pcm)
+	copy(wav[44:], toByteArray(pcm))
 
 	err := os.WriteFile(path, wav, 0644)
 	if err != nil {
 		println("Unable to write wav file at", path)
 		os.Exit(1)
 	}
+}
+
+func toByteArray(pcm []int16) []uint8 {
+	data := make([]byte, 2*len(pcm))
+	for i := 0; i < len(pcm); i += 1 {
+		sample := pcm[i]
+		data[i*2] = byte(sample & 0xFF)
+		data[i*2+1] = byte(sample >> 8)
+	}
+	return data
 }
