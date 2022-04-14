@@ -41,8 +41,8 @@ CPSA_REG WORD cpsa_reg[0x20] = {};
 CPSB_REG WORD cpsb_reg[0x20] = {};
 
 
-int vsyncCounter = 0;
-int soundCounter = 0;
+unsigned int vsyncCounter = 0;
+unsigned int soundCounter = 0;
 
 
 static const Palette ryu = {0xF111 ,0xFFD9,0xFFB8,0xFE97,0xFC86,0xF965,0xF643,0xFb00,
@@ -94,15 +94,13 @@ void onVSync() {
    drawHW();
    cpsa_reg[CPSA_REG_SPRITES_BASE] = (WORD)(((DWORD)sprites) >> 8);
 
-   vsyncCounter++;
-   if (vsyncCounter >= 240) {
-   	vsyncCounter = 0;
-   	soundCounter += 1;
+   if (vsyncCounter == 0) {
    	*((char*)0x800180) = 1;///(0x22 + soundCounter);
 
    } else {
    	*((char*)0x800180) = 0xFF;
    }
+   vsyncCounter++;
 }
 
 int run() {
