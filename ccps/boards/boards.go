@@ -63,28 +63,6 @@ func Get(name string) *Board {
 
 var boards []Board
 
-func okiEpromer(rom []byte, outDir string) {
-	if rom == nil {
-		return
-	}
-	const romSize = 0x20000
-	rom1 := rom[0:romSize]
-	rom2 := rom[romSize:]
-
-	err := ioutil.WriteFile(outDir+"sf2_18.11c", rom1, 0644)
-	if err != nil {
-		fmt.Println("Unable to write Oki EPROM 'sf2_18.11c'")
-		os.Exit(1)
-	}
-
-	err = ioutil.WriteFile(outDir+"sf2_19.12c", rom2, 0644)
-	if err != nil {
-		fmt.Println("Unable to write Oki EPROM 'sf2_19.12c'")
-		os.Exit(1)
-	}
-
-}
-
 // Generate a rom of size [num]. To do so, read from src [rom], batches of [size]
 // bytes and skip [skip] bytes on each batch.
 func writeToFile(rom []byte, size int, skip int, num int, filename string) {

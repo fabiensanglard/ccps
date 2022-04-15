@@ -20,13 +20,6 @@ func sf2Board() *Board {
 
 	sf2.GFX.Size = 12 * 0x80000 // 0x600000 = 6 MiB
 	sf2.GFX.Epromer = sf2GFXEpromer
-	// Finding size can be done via PAL bank mapper (size * 64)
-	sf2.GFXAreas = [4]GFXArea{
-		{0, 0x480000, 16},
-		{0x480000, 0x80000, 32},
-		{0x500000, 0x40000, 8},
-		{0x540000, 0x80000, 16}}
-
 	sf2.GFX.Roms = []ROM{
 		{Filename: "sf2-5m.4a", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x0000000, Skip: 8},
 		{Filename: "sf2-7m.6a", WordSize: 2, Offset: 0, Size: 0x80000, DstOffset: 0x0000002, Skip: 8},
@@ -51,25 +44,14 @@ func sf2Board() *Board {
 		{Filename: "sf2_19.12c", Size: 0x20000},
 	}
 
-	//static const Palette p =
-	//{0xF111 ,
-	//0xFFD9,
-	//0xFFB8,
-	//0xFE97,
-	//0xFC86,
-	//0xF965,
-	//0xF643,
-	//0xFb00,
-	//0xFfff,
-	//0xFeec,
-	//0xFdca,
-	//0xFba8,
-	//0xFa87,
-	//0xF765
-	//0xFf00,
-	//0x0000};
+	// Finding size can be done via PAL bank mapper (size * 64)
+	sf2.GFXAreas = [4]GFXArea{
+		{0, 0x480000, 16},
+		{0x480000, 0x80000, 32},
+		{0x500000, 0x40000, 8},
+		{0x540000, 0x80000, 16}}
 
-	// ARGB
+	// RGBA
 	sf2.Post.PostPalette = color.Palette{
 		color.RGBA{0x11, 0x11, 0x11, 0xff},
 		color.RGBA{0xFF, 0xDD, 0x99, 0xff},
@@ -142,4 +124,26 @@ func sf2M68kEPromer(r []byte, outputDir string) {
 	writeToFile(r[2*ROM_SIZE+1:], 1, 2, ROM_SIZE, outputDir+"sf2e_35g.9f")
 	writeToFile(r[3*ROM_SIZE:], 1, 2, ROM_SIZE, outputDir+"sf2_29b.10e")
 	writeToFile(r[3*ROM_SIZE+1:], 1, 2, ROM_SIZE, outputDir+"sf2_36b.10f")
+}
+
+func okiEpromer(rom []byte, outDir string) {
+	if rom == nil {
+		return
+	}
+	const romSize = 0x20000
+	rom1 := rom[0:romSize]
+	rom2 := rom[romSize:]
+
+	err := ioutil.WriteFile(outDir+"sf2_18.11c", rom1, 0644)
+	if err != nil {
+		fmt.Println("Unable to write Oki EPROM 'sf2_18.11c'")
+		os.Exit(1)
+	}
+
+	err = ioutil.WriteFile(outDir+"sf2_19.12c", rom2, 0644)
+	if err != nil {
+		fmt.Println("Unable to write Oki EPROM 'sf2_19.12c'")
+		os.Exit(1)
+	}
+
 }
