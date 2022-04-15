@@ -3,7 +3,7 @@ __at (0xF008) char LATCH1;
 #define NO_OP 0xFF
 
 void interrupt() {
-   
+
 }
 
 void requestInterrupt() {
@@ -15,9 +15,6 @@ void main() {
   unsigned char latch = 0;
   unsigned char lastLatch = NO_OP;
   while(1) {
-	  //while(interruptCounter == mainCounter){
-	  //}
-	  //mainCounter++;
       latch = LATCH1;
 
 	  // Tick one

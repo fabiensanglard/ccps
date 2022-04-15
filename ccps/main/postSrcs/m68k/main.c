@@ -19,7 +19,7 @@ typedef struct {
 	WORD	y;			// Sprite y position
 	WORD	tile;		// Sprite tile
 
-	// 0..4 CB[0..4] Palette ID used to render the tile
+   // 0..4 CB[0..4] Palette ID used to render the tile
    // 5 X Flip Mirrored horizontally
    // 6 Y Flip Mirrored vertically
    // 7 LOOKUP Looks up the CB value into the RAM for each tile (see later section)
@@ -42,11 +42,8 @@ CPSB_REG WORD cpsb_reg[0x20] = {};
 
 
 unsigned int vsyncCounter = 0;
-unsigned int soundCounter = 0;
 
 
-static const Palette ryu = {0xF111 ,0xFFD9,0xFFB8,0xFE97,0xFC86,0xF965,0xF643,0xFb00,
-   	                   0xFfff,0xFeec,0xFdca,0xFba8,0xFa87,0xF765,0xFf00,0x0000};
 
 void setPalette(int page, int paletteID, const Palette* palette) {
 
@@ -61,42 +58,28 @@ void setPalette(int page, int paletteID, const Palette* palette) {
    cpsa_reg[CPSA_REG_PALETTE_BASE] = (WORD)(((DWORD)palettes) >> 8);
 }
 
-//void drawRyu() {
-//   setPalette(0, 2, &ryu);
-//   Sprite* s = &sprites[0];
-//   s->x = 220;
-//   s->y = 100;
-//   s->tile = 	4;
-//   s->attributes = 2 |  0x5 << 12 | 0x3 << 8; // Use palette 2 dim 5+1x3+1 = 6x4 tiles
-//
-//   sprites[1].attributes	= 0xFF00; // Last sprite marker
-//
-//}
+static const Palette p = {0xF111 ,0xFFD9,0xFFB8,0xFE97,0xFC86,0xF965,0xF643,0xFb00, 0xFfff,0xFeec,0xFdca,0xFba8,0xFa87,0xF765,0xFf00,0x0000};
+void draw() {
+   setPalette(0, 2, &p); // Upload palette to Palette 2
+   Sprite* s = &sprites[0];
+   s->x = 220;
+   s->y = 100;
+   s->tile = 4;
+   s->attributes = 2 |  0x5 << 12 | 0x3 << 8; // user Palette 2 since it is where we placed it.
 
-void drawHW() {
-  setPalette(0, 2, &phelloworld);
-//  setPalette(0, 2, &ryu);
-  int i = 0;
-  for (; i < helloworld.numTiles; i++) {
-     Sprite* s = &sprites[i];
-     GFXShapeTile* t = &(helloworld.tiles[i]);
-     s->x = 196 + t->x * 16;
-     s->y = 100 + t->y * 16;
-     s->tile = t->id;
-     s->attributes = 2 ;//|  0x5 << 1 | 0x3 << 1; // Use palette 2 dim 5+1x3+1 = 6x4 tiles
-  }
-  sprites[i].attributes	= 0xFF00; // Last sprite marker
+   sprites[1].attributes	= 0xFF00; // Last sprite marker
 
 }
 
+int soundID = 0;
 void onVSync() {
-//    drawRyu();
-   drawHW();
+    draw();
    cpsa_reg[CPSA_REG_SPRITES_BASE] = (WORD)(((DWORD)sprites) >> 8);
 
-   if (vsyncCounter == 0) {
-   	*((char*)0x800180) = 1;///(0x22 + soundCounter);
-
+   if (vsyncCounter > 60) {
+   	*((char*)0x800180) = (45 + soundID);
+   	soundID++;
+    vsyncCounter = 0;
    } else {
    	*((char*)0x800180) = 0xFF;
    }

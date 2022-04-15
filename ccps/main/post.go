@@ -21,6 +21,14 @@ var srcZ80Crt0 []byte
 var srcZ80Main []byte
 
 func post(args []string) {
+	postWithBytes(args, srcM68kCrt0, srcM68kMain, srcZ80Crt0, srcZ80Main)
+}
+
+func postWithBytes(args []string,
+	srcM68kCrt0 []byte,
+	srcM68kMain []byte,
+	srcZ80Crt0 []byte,
+	srcZ80Main []byte) {
 	fs := flag.NewFlagSet("postFlags", flag.ContinueOnError)
 	verbose := fs.Bool("v", false, "Verbose mode")
 

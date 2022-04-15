@@ -83,9 +83,10 @@ void drawHW() {
      s->x = 196 + t->x * 16;
      s->y = 100 + t->y * 16;
      s->tile = t->id;
-     s->attributes = 2 ;//|  0x5 << 1 | 0x3 << 1; // Use palette 2 dim 5+1x3+1 = 6x4 tiles
+     s->attributes = 2 ;//|  0x7 << 1 | 0x3 << 1; // Use palette 2 dim 5+1x3+1 = 6x4 tiles
   }
   sprites[i].attributes	= 0xFF00; // Last sprite marker
+
 }
 
 void onVSync() {
