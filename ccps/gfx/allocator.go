@@ -8,9 +8,8 @@ import (
 )
 
 type allocator struct {
-	rover int
-	tiles []uint64 // 1 tile = 1 bit
-	//tileDim int
+	rover  int
+	tiles  []uint64 // 1 tile = 1 bit
 	stride int
 }
 
@@ -30,8 +29,8 @@ func makeAllocator(numTiles int, tileDim int) *allocator {
 	}
 
 	// First tile is not used
-	alloc.tiles[0] = math.MaxUint64
-	alloc.tiles[0] <<= 1
+	//alloc.tiles[0] = math.MaxUint64
+	//alloc.tiles[0] <<= 1
 
 	if remainder != 0 {
 		alloc.tiles[len(alloc.tiles)-1] = math.MaxUint64 >> (64 - remainder)
@@ -59,7 +58,7 @@ func (a *allocator) any() (int, error) {
 	mask := uint64(1) << value
 	a.tiles[a.rover] = bucket & ^mask
 
-	return a.rover + value, nil
+	return a.rover*64 + value, nil
 }
 
 func (a *allocator) allocSprite(w int, h int) ([]int, error) {
@@ -100,7 +99,7 @@ func (a *allocator) has(v int) bool {
 
 func (a *allocator) mark(v int) {
 	bucket := a.tiles[v/64]
-	mask := uint64(1) << v % 64
+	mask := uint64(1) << (v % 64)
 	a.tiles[v/64] = bucket & ^mask
 }
 

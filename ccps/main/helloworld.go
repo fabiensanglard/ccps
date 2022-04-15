@@ -32,6 +32,7 @@ func helloWorld(args []string) {
 
 	fs := flag.NewFlagSet("hwFlags", flag.ContinueOnError)
 	v := fs.Bool("v", false, "Verbose mode")
+	fs.String("b", "", "Target board")
 	verbose := *v
 
 	if err := fs.Parse(args); err != nil {

@@ -54,10 +54,11 @@ const (
 )
 
 type Tiled struct {
-	name  string
-	alloc []Allocation
-	Type  TiledType
-	img   *image.Paletted
+	name    string
+	alloc   []Allocation
+	Type    TiledType
+	img     *image.Paletted
+	tileDim int
 }
 
 func Build(v bool, b *boards.Board) ([]byte, *code.Code, *code.Code) {
@@ -172,7 +173,7 @@ func createGFX(srcsPath string, size int, sort gfxRegionType) ([]byte, *code.Cod
 		return rom, nil, nil
 	}
 
-	// Allocate the include receiver
+	// Allocate the definition and declaration receivers
 	dec := code.NewCode()
 	def := code.NewCode()
 
@@ -228,10 +229,10 @@ func tiledToDec(tiled Tiled) *code.Code {
 	if tiled.Type == Sprite {
 		cName := makeCFriendly(tiled.name)
 		src.AddLine(fmt.Sprintf("const GFXSprite %s = {", cName))
-		src.AddLine(fmt.Sprintf("     .height = %d,", tiled.img.Rect.Max.Y))
-		src.AddLine(fmt.Sprintf("     .width  = %d,", tiled.img.Rect.Max.X))
+		src.AddLine(fmt.Sprintf("     .height = %d,", tiled.img.Rect.Max.Y/tiled.tileDim-1))
+		src.AddLine(fmt.Sprintf("     .width  = %d,", tiled.img.Rect.Max.X/tiled.tileDim-1))
 		src.AddLine(fmt.Sprintf("     .id     = %d,", tiled.alloc[0].dst))
-		src.AddLine("}")
+		src.AddLine("};")
 
 		// Add palette for this sprite
 		src.SkipLine()
@@ -368,6 +369,7 @@ func addGFX(dir string, filename string, rom []byte, tileDim int, allocator *all
 	tiled.alloc = allocations
 	tiled.Type = tiledType
 	tiled.img = pimg
+	tiled.tileDim = tileDim
 	return tiled
 }
 
