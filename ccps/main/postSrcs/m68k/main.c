@@ -41,10 +41,6 @@ CPSA_REG WORD cpsa_reg[0x20] = {};
 CPSB_REG WORD cpsb_reg[0x20] = {};
 
 
-unsigned int vsyncCounter = 0;
-
-
-
 void setPalette(int page, int paletteID, const Palette* palette) {
 
    for (int j = 0 ; j < 16 ; j++) {
@@ -58,20 +54,21 @@ void setPalette(int page, int paletteID, const Palette* palette) {
    cpsa_reg[CPSA_REG_PALETTE_BASE] = (WORD)(((DWORD)palettes) >> 8);
 }
 
-static const Palette p = {0xF111 ,0xFFD9,0xFFB8,0xFE97,0xFC86,0xF965,0xF643,0xFb00, 0xFfff,0xFeec,0xFdca,0xFba8,0xFa87,0xF765,0xFf00,0x0000};
+static const Palette p = <PALETTE>;
 void draw() {
    setPalette(0, 2, &p); // Upload palette to Palette 2
    Sprite* s = &sprites[0];
    s->x = 220;
    s->y = 100;
-   s->tile = 4;
-   s->attributes = 2 |  0x5 << 12 | 0x3 << 8; // user Palette 2 since it is where we placed it.
+   s->tile = <TILE>;
+   s->attributes = 2 |  <TILE_HEIGHT> << 12 | <TILE_WIDTH> << 8; // user Palette 2 since it is where we placed it.
 
    sprites[1].attributes	= 0xFF00; // Last sprite marker
 
 }
 
-int soundID = 0;
+unsigned int vsyncCounter = 0;
+unsigned int soundID = 0;
 void onVSync() {
     draw();
    cpsa_reg[CPSA_REG_SPRITES_BASE] = (WORD)(((DWORD)sprites) >> 8);

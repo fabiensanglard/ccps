@@ -45,9 +45,6 @@ unsigned int vsyncCounter = 0;
 unsigned int soundCounter = 0;
 
 
-static const Palette ryu = {0xF111 ,0xFFD9,0xFFB8,0xFE97,0xFC86,0xF965,0xF643,0xFb00,
-   	                   0xFfff,0xFeec,0xFdca,0xFba8,0xFa87,0xF765,0xFf00,0x0000};
-
 void setPalette(int page, int paletteID, const Palette* palette) {
 
    for (int j = 0 ; j < 16 ; j++) {
@@ -61,21 +58,8 @@ void setPalette(int page, int paletteID, const Palette* palette) {
    cpsa_reg[CPSA_REG_PALETTE_BASE] = (WORD)(((DWORD)palettes) >> 8);
 }
 
-//void drawRyu() {
-//   setPalette(0, 2, &ryu);
-//   Sprite* s = &sprites[0];
-//   s->x = 220;
-//   s->y = 100;
-//   s->tile = 	4;
-//   s->attributes = 2 |  0x5 << 12 | 0x3 << 8; // Use palette 2 dim 5+1x3+1 = 6x4 tiles
-//
-//   sprites[1].attributes	= 0xFF00; // Last sprite marker
-//
-//}
-
-void drawHW() {
+void draw() {
   setPalette(0, 2, &phelloworld);
-//  setPalette(0, 2, &ryu);
   int i = 0;
   for (; i < helloworld.numTiles; i++) {
      Sprite* s = &sprites[i];
@@ -90,8 +74,7 @@ void drawHW() {
 }
 
 void onVSync() {
-//    drawRyu();
-   drawHW();
+   draw();
    cpsa_reg[CPSA_REG_SPRITES_BASE] = (WORD)(((DWORD)sprites) >> 8);
 
    if (vsyncCounter == 0) {

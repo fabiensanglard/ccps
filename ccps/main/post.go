@@ -1,11 +1,14 @@
 package main
 
 import (
+	"ccps/boards"
+	"ccps/gfx"
 	"ccps/sites"
 	_ "embed"
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 )
 
 //go:embed postSrcs/m68k/crt0.s
@@ -31,11 +34,15 @@ func postWithBytes(args []string,
 	srcZ80Main []byte) {
 	fs := flag.NewFlagSet("postFlags", flag.ContinueOnError)
 	verbose := fs.Bool("v", false, "Verbose mode")
+	target := fs.String("b", "", "Target board")
 
 	if err := fs.Parse(args); err != nil {
 		println(fmt.Sprintf("Cmd parsing error '%s'", err))
 		os.Exit(1)
 	}
+
+	board := boards.Get(*target)
+	srcM68kMain = replacePostValues(srcM68kMain, board)
 
 	err := os.MkdirAll(sites.M68kSrcsDir, 0777)
 	if err != nil {
@@ -72,4 +79,13 @@ func postWithBytes(args []string,
 		println("Creating", z80Crt0)
 	}
 	os.WriteFile(z80Crt0, srcZ80Crt0, 0677)
+}
+
+func replacePostValues(kMain []byte, board *boards.Board) []byte {
+	src := string(kMain)
+	src = strings.Replace(src, "<TILE>", fmt.Sprintf("%d", board.Post.PostTile), 1)
+	src = strings.Replace(src, "<TILE_HEIGHT>", fmt.Sprintf("%d", board.Post.PostTileHeight), 1)
+	src = strings.Replace(src, "<TILE_WIDTH>", fmt.Sprintf("%d", board.Post.PostTileWidth), 1)
+	src = strings.Replace(src, "<PALETTE>", fmt.Sprintf("{%s}", gfx.PaletteToString(board.Post.PostPalette)), 1)
+	return []byte(src)
 }

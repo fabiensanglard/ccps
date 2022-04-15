@@ -271,6 +271,12 @@ func paletteToDef(name string) *code.Code {
 
 func paletteToDec(name string, palette color.Palette) *code.Code {
 	c := code.NewCode()
+	paletteCode := PaletteToString(palette)
+	c.AddLine(fmt.Sprintf("const Palette p%s = {%s};\n", makeCFriendly(name), paletteCode))
+	return c
+}
+
+func PaletteToString(palette color.Palette) string {
 	paletteCode := ""
 	for _, color := range palette {
 		r, g, b, a := color.RGBA()
@@ -280,8 +286,7 @@ func paletteToDec(name string, palette color.Palette) *code.Code {
 		b = b & 0xF
 		paletteCode += fmt.Sprintf("0x%02X%02X,", byte(a|r), byte(g|b))
 	}
-	c.AddLine(fmt.Sprintf("const Palette p%s = {%s};\n", makeCFriendly(name), paletteCode))
-	return c
+	return paletteCode
 }
 
 func makeCFriendly(name string) string {
