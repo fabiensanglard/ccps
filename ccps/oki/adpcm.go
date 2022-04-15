@@ -10,12 +10,12 @@ var stepSizes = [...]int16{
 var adjustFactor = [...]int16{
 	-1, -1, -1, -1, 2, 4, 6, 8}
 
-type codec struct {
+type Codec struct {
 	lastSample int16
 	stepIndex  int16
 }
 
-func (c *codec) encodeStep(sample int16) byte {
+func (c *Codec) encodeStep(sample int16) byte {
 	ss := stepSizes[c.stepIndex]
 	diff := sample - c.lastSample
 	code := byte(0x0)
@@ -45,7 +45,7 @@ func (c *codec) encodeStep(sample int16) byte {
 	return code
 }
 
-func (c *codec) encode(pcm []int16) []byte {
+func (c *Codec) encode(pcm []int16) []byte {
 	cursor := 0
 	adpcm := make([]byte, len(pcm)/2)
 	for i := 0; i < len(pcm); i += 2 {
@@ -57,7 +57,7 @@ func (c *codec) encode(pcm []int16) []byte {
 	return adpcm
 }
 
-func (c *codec) decodeStep(code byte) int16 {
+func (c *Codec) decodeStep(code byte) int16 {
 	ss := stepSizes[c.stepIndex]
 	delta := ((int16(code&0x7)*2 + 1) * ss) >> 3
 
@@ -79,7 +79,7 @@ func (c *codec) decodeStep(code byte) int16 {
 	return sample
 }
 
-func (c *codec) nextStepIdx(code byte) {
+func (c *Codec) nextStepIdx(code byte) {
 	c.stepIndex += adjustFactor[code&0x7]
 
 	if c.stepIndex < 0 {
@@ -91,7 +91,7 @@ func (c *codec) nextStepIdx(code byte) {
 	}
 }
 
-func (c *codec) decode(adpcm []byte) []int16 {
+func (c *Codec) decode(adpcm []byte) []int16 {
 	pcm := make([]int16, len(adpcm)*2)
 	cursor := 0
 	for i := 0; i < len(adpcm); i++ {
@@ -106,11 +106,13 @@ func (c *codec) decode(adpcm []byte) []int16 {
 // https://github.com/nth-eye/vox/blob/main/src/vox.c
 
 func PCMtoADPCM(wav []int16) []byte {
-	var adpcm = codec{}
-	return adpcm.encode(wav)
+	var codec = Codec{}
+	adpcm := codec.encode(wav)
+	return adpcm
 }
 
 func ADPCMToPCM(adpcm []byte) []int16 {
-	var codec = codec{}
-	return codec.decode(adpcm)
+	var codec = Codec{}
+	pcm := codec.decode(adpcm)
+	return pcm
 }

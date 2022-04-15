@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"ccps/boards"
 	"ccps/sites"
+	_ "embed"
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"image"
@@ -89,7 +92,7 @@ func dumpSheets(prefix int, toDir string, dim int, rom []byte) {
 		go func(i int) {
 			defer wg.Done()
 			offset := i * bytesPerSheet
-			path := fmt.Sprintf("%s%d-%d.png", toDir, prefix, i)
+			path := fmt.Sprintf("%s%d-%d.svg", toDir, prefix, i)
 			dumpsheet(path, dim, rom[offset:offset+bytesPerSheet])
 		}(i)
 	}
@@ -165,19 +168,39 @@ func dumpsheet(path string, dim int, sheet []byte) {
 			drawTile(sheet[offset:offset+bytesPerTile], x*dim, y*dim, img, dim)
 		}
 	}
-	f, err := os.Create(path)
-	if err != nil {
-		println("Unable to create PNG'", err.Error(), "'")
-		os.Exit(1)
-	}
-	defer f.Close()
 
-	err = png.Encode(f, img)
+	var pngPayload bytes.Buffer
+	err := png.Encode(&pngPayload, img)
 	if err != nil {
 		println("Unable to dump GFX'", err.Error(), "'")
 		os.Exit(1)
 	}
-	//png2svg(filename, fmt.Sprintf("%s/0x%02x00.svg", folder, sheetID), sheetID)
+	png2svg(&pngPayload, path, 16)
+}
+
+// Template for 16x16 tile sheets
+//go:embed svgParts/16_top.txt
+var svgTop16 []byte
+
+//go:embed svgParts/16_mid.txt
+var svgMid16 []byte
+
+//go:embed svgParts/16_bot.txt
+var svgBot16 []byte
+
+func png2svg(payload *bytes.Buffer, out string, bank int) {
+	f, err := os.Create(out)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer f.Close()
+
+	f.WriteString(string(svgTop16))
+	f.WriteString(base64.StdEncoding.EncodeToString(payload.Bytes()))
+	f.WriteString(string(svgMid16))
+	f.WriteString(fmt.Sprintf("%04x", bank<<8))
+	f.WriteString(string(svgBot16))
 }
 
 func desinterleave(srcs []boards.ROM, dst []byte) {

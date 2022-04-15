@@ -69,7 +69,7 @@ func dumpSFX(args []string) {
 
 func writeWav(path string, pcm []int16) {
 	const wavHeaderSize = 0
-	wav := make([]byte, wavHeaderSize+len(pcm))
+	wav := make([]byte, wavHeaderSize+len(pcm)*2)
 
 	// Master RIFF chunk
 	copy(wav[0:4], "RIFF")
