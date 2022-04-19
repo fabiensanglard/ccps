@@ -25,7 +25,7 @@
 init:
    
    ld  sp,#0xd7ff    ; Setup stack
-   IM 1              ; Set Interupt mode 1
+   IM 1              ; Set Interrupt mode 1
    call  gsinit      ; Init global variables
 main:  
    call  _main       ; Infinite loop

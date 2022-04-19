@@ -23,7 +23,9 @@ type ROM struct {
 }
 
 type ROMSet struct {
-	Size    int64
+	Size int64
+	// TODO: Get rid of these function pointer, we should always use the same function
+	//       but with board specific ROM descriptors.
 	Epromer Rom2Eprom
 	Roms    []ROM
 }
