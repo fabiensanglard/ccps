@@ -1,4 +1,4 @@
-__at (0xF000) char YM2151_ADD;
+__at (0xF000) char YM2151_ADR;
 __at (0xF001) char YM2151_DAT;
 __at (0xF002) char OKI;
 __at (0xF008) char LATCH1;
@@ -31,23 +31,27 @@ void interrupt() {
 
 void requestInterrupt() {
   // The YM2151 runs at the same speed at the Z-80 (3.579MHz)
-  // We want to be interrupted at 4ms interval. In YM2151 ticks,
-  // that means setting timer to 0xC000 (800) so it ticks at
-  // 64 * ( 1024 - 800) / 3579
-  YM2151_ADD = YM2151_REG_CLKA1;
-  YM2151_DAT = 0xC0;
+  // We want to be interrupted at 4ms interval. That means
+  // setting timer A to 800 so it ticks at 64 * ( 1024 - 800) / 3579.
+  // The Timer A 10 bit is split across 2 registers (A1 and A2). We
+  // write 0xC8 in the A1 and 0 in A2 resulting in value 0xC8 * 4 = 800.
 
-  YM2151_ADD = YM2151_REG_CLKA2;
+  // 8 msb
+  YM2151_ADR = YM2151_REG_CLKA1;
+  YM2151_DAT = 0xC8;
+
+  // 2 lsb
+  YM2151_ADR = YM2151_REG_CLKA2;
   YM2151_DAT = 0x00;
 }
 
 void main() {
   // Enable timer A
-  YM2151_ADD = YM2151_REG_CTRL;
+  YM2151_ADR = YM2151_REG_CTRL;
   YM2151_DAT = 0x15;
 
   // Request the first interrupt (after that the interrupt handler
-  // will call requestInterrupt() after calling interrupt().
+  // will call requestInterrupt() after calling interrupt()).
   requestInterrupt();
 
   while(1) {

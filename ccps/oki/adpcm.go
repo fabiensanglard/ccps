@@ -16,33 +16,33 @@ type Codec struct {
 }
 
 func (c *Codec) encodeStep(sample int16) byte {
-	ss := stepSizes[c.stepIndex]
-	diff := sample - c.lastSample
-	code := byte(0x0)
 	sample >>= 3 // Algo uses 12-bit input
+	diff := sample - c.lastSample
+	nibble := byte(0x0)
 
 	if diff < 0 {
 		diff = -diff
-		code = 0x8
+		nibble = 0x8
 	}
 
+	ss := stepSizes[c.stepIndex]
 	if diff >= ss {
 		diff -= ss
-		code |= 0x4
+		nibble |= 0x4
 	}
 
 	if diff >= (ss >> 1) {
 		diff -= ss >> 1
-		code |= 0x2
+		nibble |= 0x2
 	}
 
 	if diff >= (ss >> 2) {
-		code |= 0x1
+		nibble |= 0x1
 	}
 
-	c.lastSample = c.decodeStep(code)
+	c.lastSample = c.decodeStep(nibble)
 
-	return code
+	return nibble
 }
 
 func (c *Codec) encode(pcm []int16) []byte {
@@ -65,7 +65,7 @@ func (c *Codec) decodeStep(code byte) int16 {
 		delta = -delta
 	}
 
-	sample := int16(c.lastSample) + delta
+	sample := c.lastSample + delta
 
 	if sample < -2048 {
 		sample = -2046
@@ -74,12 +74,12 @@ func (c *Codec) decodeStep(code byte) int16 {
 		sample = 2047
 	}
 
-	c.nextStepIdx(code)
+	c.updateStepIndex(code)
 	c.lastSample = sample
 	return sample
 }
 
-func (c *Codec) nextStepIdx(code byte) {
+func (c *Codec) updateStepIndex(code byte) {
 	c.stepIndex += adjustFactor[code&0x7]
 
 	if c.stepIndex < 0 {

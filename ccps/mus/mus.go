@@ -1,5 +1,7 @@
 package mus
 
+// Tools:
+// https://github.com/vgmrips/vgmtools#vgm-text-writer-vgm2txt
 import (
 	"ccps/boards"
 	"ccps/code"
