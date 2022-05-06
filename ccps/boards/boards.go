@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image/color"
 	"io/ioutil"
-	"os"
 )
 
 type Rom2Eprom func([]byte, string)
@@ -58,8 +57,7 @@ func Get(name string) *Board {
 	if name == "sf2" {
 		return sf2Board()
 	}
-	println(fmt.Sprintln("Unknown board '%s'", name))
-	os.Exit(1)
+	panic(fmt.Sprintln("Unknown board '%s'", name))
 	return &Board{}
 }
 
@@ -70,8 +68,7 @@ var boards []Board
 func writeToFile(rom []byte, size int, skip int, num int, filename string) {
 
 	if num%size != 0 {
-		println("Bad writeToFile. Size", num, "is not evenly divisible by ", size, ".")
-		os.Exit(1)
+		panic(fmt.Sprintf("Bad writeToFile. Size %d is not evenly divisible by %d.", num, size))
 	}
 
 	var eprom = make([]byte, num)
@@ -83,7 +80,6 @@ func writeToFile(rom []byte, size int, skip int, num int, filename string) {
 	}
 	err := ioutil.WriteFile(filename, eprom, 0644)
 	if err != nil {
-		fmt.Println("Unable to write EPROM '", filename, "'")
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to write EPROM '%s'", filename))
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image/color"
 	"io/ioutil"
-	"os"
 )
 
 func sf2Board() *Board {
@@ -109,8 +108,7 @@ func sf2Z80EPromer(rom []byte, outputDir string) {
 	path := outputDir + "sf2_9.12a"
 	err := ioutil.WriteFile(path, rom, 0644)
 	if err != nil {
-		fmt.Println("Unable to write EPROM '", path, "'")
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to write EPROM '%s'", path))
 	}
 }
 
@@ -136,14 +134,12 @@ func okiEpromer(rom []byte, outDir string) {
 
 	err := ioutil.WriteFile(outDir+"sf2_18.11c", rom1, 0644)
 	if err != nil {
-		fmt.Println("Unable to write Oki EPROM 'sf2_18.11c'")
-		os.Exit(1)
+		panic("Unable to write Oki EPROM 'sf2_18.11c'")
 	}
 
 	err = ioutil.WriteFile(outDir+"sf2_19.12c", rom2, 0644)
 	if err != nil {
-		fmt.Println("Unable to write Oki EPROM 'sf2_19.12c'")
-		os.Exit(1)
+		panic("Unable to write Oki EPROM 'sf2_19.12c'")
 	}
 
 }

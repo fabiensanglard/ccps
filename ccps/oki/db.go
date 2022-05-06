@@ -2,7 +2,6 @@ package oki
 
 import (
 	"fmt"
-	"os"
 )
 
 type OkiRomEntry struct {
@@ -67,8 +66,7 @@ func (o *OkiRom) AddPhrase(phrase []byte) {
 
 func (o *OkiRom) writeEntry(addr OkiRomEntry, dst []byte) {
 	if len(dst) != indexEntrySize {
-		println("Entry slice is wrong size. Expected", indexEntrySize, "but got", len(dst))
-		os.Exit(1)
+		panic(fmt.Sprintf("Entry slice is wrong size. Expected %d but got %d", indexEntrySize, len(dst)))
 	}
 	dst[0] = byte(addr.start & 0xFF0000 >> 16)
 	dst[1] = byte(addr.start & 0x00FF00 >> 8)
@@ -86,8 +84,7 @@ func (o *OkiRom) genROM(size int64) []byte {
 	}
 
 	if len(o.Phrases) > maxPhrases {
-		println(fmt.Sprintf("Too many phrases %d, max=%d", len(o.Phrases), maxPhrases))
-		os.Exit(1)
+		panic(fmt.Sprintf("Too many phrases %d, max=%d", len(o.Phrases), maxPhrases))
 	}
 
 	var totalSize uint32 = 0
@@ -106,8 +103,7 @@ func (o *OkiRom) genROM(size int64) []byte {
 
 func (o *OkiRom) writeHeader(header []byte) {
 	if len(header) != headerSize-indexEntrySize {
-		println("Unexpected oki header size. Got", len(header), "but expected", headerSize)
-		os.Exit(1)
+		panic(fmt.Sprintf("Unexpected oki header size. Got %d but expected %d", len(header), headerSize))
 	}
 
 	var cursor uint32 = 0

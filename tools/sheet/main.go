@@ -15,10 +15,10 @@ type Extractable interface {
 func main() {
 	fmt.Println("Extracting...")
 
-	var sf2 = makeSF2()
+	//var sf2 = makeSF2()
 	//var ghouls = makeGhouls()
 	//var sf2hf = makeSF2HF()
-	//var ffight = makeFFight()
+	var ffight = makeFFight()
 	//var pang3 = makePang3()
 	//var ssf = makeSSF()
 	//var sfa3 = makeSFA3()
@@ -29,7 +29,7 @@ func main() {
 	var wg sync.WaitGroup
 
 	//var games = []Extractable{ &sf2, &ffight, &ghouls, &sf2hf, &pang3, &ssf, &sfa3, &sfa, &strider, &fw}
-	var games = []Extractable{ &sf2}
+	var games = []Extractable{ &ffight}
 	for _, game := range games {
 		if game.Load() {
 			fmt.Println("Found game:", game.GetName())

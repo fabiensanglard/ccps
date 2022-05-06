@@ -18,8 +18,7 @@ var allCmds = []string{cmdBuild, cmdInstall, cmdHelloWorld, cmdClean, cmdDumpGFX
 func rm(dir string) {
 	err := os.RemoveAll(dir)
 	if err != nil {
-		println(fmt.Sprintf("Cannot delete '%s' folder: %v", dir, err))
-		os.Exit(1)
+		panic(fmt.Sprintf("Cannot delete '%s' folder: %v", dir, err))
 	}
 	println("rm -fr", dir)
 }
@@ -30,8 +29,7 @@ func clean() {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println(fmt.Sprintf("Error: Expected subcommands %v", allCmds))
-		os.Exit(1)
+		panic(fmt.Sprintf("Error: Expected subcommands %v", allCmds))
 	}
 	cmd := os.Args[1]
 	args := os.Args[2:]

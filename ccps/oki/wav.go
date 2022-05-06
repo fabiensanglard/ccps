@@ -50,67 +50,58 @@ func LoadWav(path string) (*Wav, error) {
 	// Parse Header
 	wav.header.ChunkID = string(data[0:4])
 	if wav.header.ChunkID != "RIFF" {
-		println(fmt.Sprintf("Bad magic number for '%s' (%s)"), path, wav.header.ChunkID)
-		os.Exit(1)
+		panic(fmt.Sprintf("Bad magic number for '%s' (%s)", path, wav.header.ChunkID))
 	}
 
 	wav.header.ChunkSize = binary.LittleEndian.Uint32(data[4:8])
 	if int(wav.header.ChunkSize) != len(data[8:]) {
-		println("Bad wav ", path, "size should be", wav.header.ChunkSize, "but is", len(data[10:]))
-		os.Exit(1)
+		panic(fmt.Sprintf("Bad wav '%s' size should be %d but is %d", path, wav.header.ChunkSize, len(data[10:])))
+
 	}
 	wav.header.Format = string(data[8:12])
 	if wav.header.Format != "WAVE" {
-		println(fmt.Sprintf("Bad wav format for '%s' (%s)"), path, wav.header.ChunkID)
-		os.Exit(1)
+		panic(fmt.Sprintf("Bad wav format for '%s' (%s)", path, wav.header.ChunkID))
 	}
 
 	// Now parse "fmt " chunk
 	data = data[12:]
 	wav.fmt.Subchunk1ID = string(data[0:4])
 	if "fmt " != wav.fmt.Subchunk1ID {
-		println(fmt.Sprintf("Unexpected subChunk in '%s' (%s)", path, wav.fmt.Subchunk1ID))
-		os.Exit(1)
+		panic(fmt.Sprintf("Unexpected subChunk in '%s' (%s)", path, wav.fmt.Subchunk1ID))
 	}
 
 	wav.fmt.Subchunk1Size = binary.LittleEndian.Uint32(data[4:8])
 	if 16 != wav.fmt.Subchunk1Size {
-		println(fmt.Sprintf("Unexpected Subchunk1Size in '%s' (%d) expected 16", path, wav.fmt.Subchunk1Size))
-		os.Exit(1)
+		panic(fmt.Sprintf("Unexpected Subchunk1Size in '%s' (%d) expected 16", path, wav.fmt.Subchunk1Size))
 	}
 
 	wav.fmt.AudioFormat = binary.LittleEndian.Uint16(data[8:10])
 	if 1 != wav.fmt.AudioFormat {
-		println(fmt.Sprintf("Unexpected AudioFormat in '%s' (%d)", path, wav.fmt.AudioFormat))
-		os.Exit(1)
+		panic(fmt.Sprintf("Unexpected AudioFormat in '%s' (%d)", path, wav.fmt.AudioFormat))
 	}
 
 	wav.fmt.NumChannels = binary.LittleEndian.Uint16(data[10:12])
 	if 1 != wav.fmt.NumChannels {
-		println(fmt.Sprintf("Unexpected NumChannels in '%s' (%d) MUST be 1", path, wav.fmt.NumChannels))
-		os.Exit(1)
+		panic(fmt.Sprintf("Unexpected NumChannels in '%s' (%d) MUST be 1", path, wav.fmt.NumChannels))
 	}
 
 	wav.fmt.SampleRate = binary.LittleEndian.Uint32(data[12:16])
 	if wav.fmt.SampleRate != 7575 {
-		println(fmt.Sprintf("Unexpected sample rate in '%s' (%d) MUST be 7575", path, wav.fmt.SampleRate))
-		os.Exit(1)
+		panic(fmt.Sprintf("Unexpected sample rate in '%s' (%d) MUST be 7575", path, wav.fmt.SampleRate))
 	}
 	wav.fmt.ByteRate = binary.LittleEndian.Uint32(data[16:20])
 	wav.fmt.BlockAlign = binary.LittleEndian.Uint16(data[20:22])
 
 	wav.fmt.BitsPerSample = binary.LittleEndian.Uint16(data[22:24])
 	if 16 != wav.fmt.BitsPerSample {
-		println(fmt.Sprintf("Unexpected BitPerSample in '%s' (%d) MUST be 16", path, wav.fmt.BitsPerSample))
-		os.Exit(1)
+		panic(fmt.Sprintf("Unexpected BitPerSample in '%s' (%d) MUST be 16", path, wav.fmt.BitsPerSample))
 	}
 
 	// Now parse the data chunk
 	data = data[24:]
 	chunkName := string(data[0:4])
 	if chunkName != "data" {
-		println(fmt.Sprintf("Unexpexcted chunk '%s' (%s) but expected 'data'"), path, chunkName)
-		os.Exit(1)
+		panic(fmt.Sprintf("Unexpexcted chunk '%s' (%s) but expected 'data'", path, chunkName))
 	}
 
 	dataLength := binary.LittleEndian.Uint32(data[4:8])

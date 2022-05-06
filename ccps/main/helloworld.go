@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"os"
 )
 
 //go:embed hwAssets/helloworld.png
@@ -36,8 +35,7 @@ func helloWorld(args []string) {
 	verbose := *v
 
 	if err := fs.Parse(args); err != nil {
-		println(fmt.Sprintf("Cmd parsing error '%s'", err))
-		os.Exit(1)
+		panic(fmt.Sprintf("Cmd parsing error '%s'", err))
 	}
 
 	if verbose {

@@ -37,8 +37,7 @@ func postWithBytes(args []string,
 	target := fs.String("b", "", "Target board")
 
 	if err := fs.Parse(args); err != nil {
-		println(fmt.Sprintf("Cmd parsing error '%s'", err))
-		os.Exit(1)
+		panic(fmt.Sprintf("Cmd parsing error '%s'", err))
 	}
 
 	board := boards.Get(*target)
@@ -46,14 +45,12 @@ func postWithBytes(args []string,
 
 	err := os.MkdirAll(sites.M68kSrcsDir, 0777)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Unable to create m68K src dir '%s'", sites.M68kSrcsDir))
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to create m68K src dir '%s'", sites.M68kSrcsDir))
 	}
 
 	err = os.MkdirAll(sites.Z80SrcsDir, 0777)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Unable to create z80 src dir '%s'", sites.Z80SrcsDir))
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to create z80 src dir '%s'", sites.Z80SrcsDir))
 	}
 
 	m68kMain := sites.M68kSrcsDir + "main.c"

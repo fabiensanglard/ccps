@@ -45,8 +45,7 @@ func dumpGFX(args []string) {
 	boardName := fs.String("b", "sf2", "Target board")
 
 	if err := fs.Parse(args); err != nil {
-		println(fmt.Sprintf("Cmd parsing error '%s'", err))
-		os.Exit(1)
+		panic(fmt.Sprintf("Cmd parsing error '%s'", err))
 	}
 
 	board := boards.Get(*boardName)
@@ -55,8 +54,7 @@ func dumpGFX(args []string) {
 	err := os.RemoveAll(dumpFolder)
 	err = os.MkdirAll(dumpFolder, 0777)
 	if err != nil {
-		println("Unable to create GFX dump folder ", dumpFolder, ":", err.Error())
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to create GFX dump folder '%s' : '%s'", dumpFolder, err.Error()))
 	}
 
 	// Desinterleave
@@ -172,8 +170,7 @@ func dumpsheet(path string, dim int, sheet []byte) {
 	var pngPayload bytes.Buffer
 	err := png.Encode(&pngPayload, img)
 	if err != nil {
-		println("Unable to dump GFX'", err.Error(), "'")
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to dump GFX '%s'", err.Error()))
 	}
 	png2svg(&pngPayload, path, 16)
 }
@@ -208,8 +205,7 @@ func desinterleave(srcs []boards.ROM, dst []byte) {
 		path := sites.OutDir + rom.Filename
 		content, err := ioutil.ReadFile(path)
 		if err != nil {
-			fmt.Println("Unable to open '", path, "'")
-			os.Exit(1)
+			panic(fmt.Sprintf("Unable to open '%s'", path))
 		}
 
 		for j := 0; j < rom.Size/rom.WordSize; j++ {

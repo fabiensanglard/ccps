@@ -114,7 +114,7 @@ func (game *Game) dumpSheet(sheetID int, sheet []byte, folder string) {
 	f, _ := os.Create(filename)
 	defer f.Close()
 	png.Encode(f, img)
-	//png2svg(filename, fmt.Sprintf("%s/%04d.svg", folder, sheetID), sheetID)
+	png2svg(filename, fmt.Sprintf("%s/%04d.svg", folder, sheetID), sheetID)
 }
 
 func (game *Game) desinterleave(roms []RomSrc, dstROM []byte) bool {

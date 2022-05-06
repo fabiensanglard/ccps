@@ -53,22 +53,19 @@ func Build(v bool, b *boards.Board) []byte {
 
 	err, asmed := assemble()
 	if err != nil {
-		println("Assembling error", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Assembling error '%s'", err.Error()))
 	}
 	rels = append(rels, asmed...)
 
 	err, cced := compile()
 	if err != nil {
-		println("Compiling error", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Compiling error '%s'", err.Error()))
 	}
 	rels = append(rels, cced...)
 
 	err, linked := link(rels)
 	if err != nil {
-		println("Linking error", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Linking error '%s'", err.Error()))
 	}
 
 	obj := binarize(linked)
@@ -76,8 +73,7 @@ func Build(v bool, b *boards.Board) []byte {
 
 	rom, err := os.ReadFile(romPath)
 	if err != nil {
-		println("Cannot read generated z80 ROM", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Cannot read generated z80 ROM '%s'", err.Error()))
 	}
 
 	return rom
@@ -88,14 +84,12 @@ func pad(input string) string {
 	// Get the size.
 	fi, err := os.Stat(input)
 	if err != nil {
-		println(fmt.Sprintf("Error stating '%s': %v", input, err))
-		os.Exit(1)
+		panic(fmt.Sprintf("Error stating '%s': %v", input, err))
 	}
 
 	// Make sure it is not too big.
 	if fi.Size() > board.Z80.Size {
-		fmt.Printf("Z-80 ROM is too big (%d bytes) max=%d bytes", fi.Size(), board.Z80.Size)
-		os.Exit(1)
+		panic(fmt.Sprintf("Z-80 ROM is too big (%d bytes) max=%d bytes", fi.Size(), board.Z80.Size))
 	}
 
 	cmd := fmt.Sprintf("dd if=/dev/zero of=%s bs=1 count=1 seek=65535", input)
@@ -122,8 +116,7 @@ func binarize(input string) string {
 func checkExecutable(bin string) {
 	path, err := exec.LookPath(bin)
 	if err != nil {
-		fmt.Println("Could not find ", bin)
-		os.Exit(1)
+		panic(fmt.Sprintf("Could not find ", bin))
 	}
 	if verbose {
 		fmt.Println(fmt.Sprintf("Found '%s' -> '%s'", bin, path))
@@ -152,8 +145,7 @@ func assemble() (error, []string) {
 
 	files, err := ioutil.ReadDir(sites.Z80SrcsDir)
 	if err != nil {
-		println(fmt.Sprintf("Unable to read dir '%s'", sites.Z80SrcsDir))
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to read dir '%s'", sites.Z80SrcsDir))
 	}
 
 	//TODO make sure crt0.s is first so areas are properly sorted.
@@ -248,15 +240,13 @@ func link(rels []string) (error, string) {
 	file, err := os.OpenFile(lkPath, mode, 0644)
 	defer file.Close()
 	if err != nil {
-		println(fmt.Sprintf("Cannot create linker script '%s'", lkPath))
-		os.Exit(1)
+		panic(fmt.Sprintf("Cannot create linker script '%s'", lkPath))
 	}
 	datawriter := bufio.NewWriter(file)
 	for _, data := range linkerScript {
 		_, err = datawriter.WriteString(data + "\n")
 		if err != nil {
-			println(fmt.Sprintf("Cannot write linker script '%s'", err))
-			os.Exit(1)
+			panic(fmt.Sprintf("Cannot write linker script '%s'", err))
 		}
 	}
 	datawriter.Flush()

@@ -10,7 +10,6 @@ import (
 	"ccps/z80"
 	"flag"
 	"fmt"
-	"os"
 )
 
 func build(args []string) {
@@ -22,8 +21,7 @@ func build(args []string) {
 	}
 
 	if *target == "" {
-		println("Error: No board specified (-b)")
-		os.Exit(1)
+		panic("Error: No board specified (-b)")
 	}
 
 	board := boards.Get(*target)

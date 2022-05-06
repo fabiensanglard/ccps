@@ -39,8 +39,7 @@ func run(c string) {
 func checkExecutable(bin string) {
 	path, err := exec.LookPath(bin)
 	if err != nil {
-		fmt.Println("Could not find ", bin)
-		os.Exit(1)
+		panic(fmt.Sprintf("Could not find executable '%s'", bin))
 	}
 	if verbose {
 		fmt.Println(fmt.Sprintf("Found '%s' -> '%s'", bin, path))
@@ -68,39 +67,34 @@ func Build(v bool, b *boards.Board) []byte {
 
 	err, asmed := assemble()
 	if err != nil {
-		println("Assembling error", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Assembling error %s", err.Error()))
 	}
 	objs = append(objs, asmed...)
 
 	// Compile user provider source code
 	err, cced := compile(sites.M68kSrcsDir)
 	if err != nil {
-		println("Compiling error", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Compiling error '%s'", err.Error()))
 	}
 	objs = append(objs, cced...)
 
 	// Compile generated source code (GFX assets)
 	err, cced = compile(sites.M68kGenDir)
 	if err != nil {
-		println("Compiling error", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Compiling error '%s'", err.Error()))
 	}
 	objs = append(objs, cced...)
 
 	err, linked := link(objs)
 	if err != nil {
-		println("Linking error", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Linking error '%s'", err.Error()))
 	}
 
 	//romPath := binarize(linked)
 
 	rom, err := os.ReadFile(linked)
 	if err != nil {
-		println("Cannot read generated m68k ROM", err)
-		os.Exit(1)
+		panic(fmt.Sprintf("Cannot read generated m68k ROM: '%s'", err.Error()))
 	}
 
 	return rom
@@ -113,8 +107,7 @@ func link(objs []string) (error, string) {
 	lkPath := sites.M68kObjsDir + "cps1.lk"
 	err := os.WriteFile(lkPath, linkerScript, 0644)
 	if err != nil {
-		println(fmt.Sprintf("Unable to write linker script '%s'", lkPath))
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to write linker script '%s'", lkPath))
 	}
 
 	mapDir := sites.M68kObjsDir + "game.map"
@@ -139,8 +132,7 @@ func link(objs []string) (error, string) {
 func compile(dir string) (error, []string) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		println(err)
-		os.Exit(1)
+		panic(err)
 	}
 
 	var outputs []string
@@ -178,8 +170,7 @@ func compile(dir string) (error, []string) {
 func assemble() (error, []string) {
 	files, err := ioutil.ReadDir(sites.M68kSrcsDir)
 	if err != nil {
-		println(fmt.Sprintf("Unable to read dir '%s'", sites.M68kSrcsDir))
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to read dir '%s'", sites.M68kSrcsDir))
 	}
 
 	//TODO make sure crt0.s is first so areas are properly sorted.

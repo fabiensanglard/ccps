@@ -16,13 +16,11 @@ func dumpSFX(args []string) {
 	boardName := fs.String("b", "", "Target board")
 
 	if err := fs.Parse(args); err != nil {
-		println(fmt.Sprintf("Cmd parsing error '%s'", err))
-		os.Exit(1)
+		panic(fmt.Sprintf("Cmd parsing error '%s'", err))
 	}
 
 	if *boardName == "" {
-		println("No board target provided. Aborting")
-		os.Exit(1)
+		panic("No board target provided. Aborting")
 	}
 
 	dumpFolder := "dump/sfx/"
@@ -33,8 +31,7 @@ func dumpSFX(args []string) {
 	//}
 	err = os.MkdirAll(dumpFolder, 0777)
 	if err != nil {
-		println("Unable to create SFX dump folder ", dumpFolder, ":", err.Error())
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to create SFX dump folder '%s' : '%s'", dumpFolder, err.Error()))
 	}
 
 	board := boards.Get(*boardName)
@@ -46,8 +43,7 @@ func dumpSFX(args []string) {
 		path := sites.OutDir + inRom.Filename
 		bytes, err := os.ReadFile(path)
 		if err != nil {
-			println(fmt.Sprintf("Unable to read '%s' (%s)", path, err))
-			os.Exit(1)
+			panic(fmt.Sprintf("Unable to read '%s' (%s)", path, err))
 		}
 		copy(rom[romCursor:romCursor+inRom.Size], bytes)
 		romCursor += inRom.Size
@@ -94,8 +90,7 @@ func writeWav(path string, pcm []int16) {
 
 	err := os.WriteFile(path, wav, 0644)
 	if err != nil {
-		println("Unable to write wav file at", path)
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to write wav file at '%s'", path))
 	}
 }
 

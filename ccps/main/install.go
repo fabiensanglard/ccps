@@ -3,6 +3,7 @@ package main
 import (
 	"ccps/sites"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,14 +15,12 @@ func install(args []string) {
 	v := fs.Bool("v", false, "Verbose mode")
 	dir := fs.String("d", "", "Destination directory")
 	if err := fs.Parse(args); err != nil {
-		//println(fmt.Sprintf("Cmd parsing error '%s'", err))
-		os.Exit(1)
+		panic(fmt.Sprintf("Cmd parsing error '%s'", err))
 	}
 
 	outDir := *dir
 	if len(outDir) == 0 {
-		println("Usage: ccps install -dstDirectory")
-		os.Exit(1)
+		panic("Usage: ccps install -dstDirectory")
 	}
 	verbose := *v
 	if !strings.HasSuffix(outDir, "/") {
@@ -50,8 +49,7 @@ func install(args []string) {
 		}
 		err := os.Rename(src, dst)
 		if err != nil {
-			println("Unable to move", src, "to", dst, ":", err.Error())
-			os.Exit(1)
+			panic(fmt.Sprintf("Unable to move '%s' to '%s': '%s'", src, dst, err.Error()))
 		}
 	}
 }

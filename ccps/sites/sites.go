@@ -9,8 +9,7 @@ func ensureDir(dir string) {
 	err := os.RemoveAll(dir)
 	err = os.MkdirAll(dir, 0777)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Unable to create dir '%s'", dir))
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to create dir '%s'", dir))
 	}
 }
 

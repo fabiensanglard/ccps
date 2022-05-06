@@ -145,8 +145,7 @@ func getTileDim(sort gfxRegionType) int {
 		return int(dimSRC3)
 	}
 
-	println("Requested tile dimension for unknown sort:", sort)
-	os.Exit(1)
+	panic(fmt.Sprintf("Requested tile dimension for unknown sort %d", sort))
 	return 0
 }
 
@@ -217,8 +216,7 @@ func tiledToDef(tiled Tiled) *code.Code {
 		return src
 	}
 
-	println(fmt.Sprintf("Cannot convert tile to def (type %d not handled)", tiled.Type))
-	os.Exit(1)
+	panic(fmt.Sprintf("Cannot convert tile to def (type %d not handled)", tiled.Type))
 	return nil // Never reached
 }
 
@@ -259,8 +257,7 @@ func tiledToDec(tiled Tiled) *code.Code {
 		return src
 	}
 
-	println(fmt.Sprintf("Cannot convert tile to dec (type %d not handled)", tiled.Type))
-	os.Exit(1)
+	panic(fmt.Sprintf("Cannot convert tile to dec (type %d not handled)", tiled.Type))
 	return nil // Never reached
 }
 
@@ -302,8 +299,7 @@ func addGFX(dir string, filename string, rom []byte, tileDim int, allocator *all
 	src := dir + filename
 	file, err := os.Open(src)
 	if err != nil {
-		println("Unable to open file '", src, "'")
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to open file '%s'", src))
 	}
 	defer file.Close()
 
@@ -311,22 +307,17 @@ func addGFX(dir string, filename string, rom []byte, tileDim int, allocator *all
 	// We just have to be sure all the image packages we want are imported.
 	img, _, err := image.Decode(file)
 	if err != nil {
-		println("Unable to decode image'", src, "'")
-		os.Exit(1)
+		panic(fmt.Sprintf("Unable to decode image '%s'", src))
 	}
 
 	_, ok := img.(image.PalettedImage)
 	if !ok {
-		if verbose {
-			println("Image '", src, ", is not a paletted PNG")
-			os.Exit(0)
-		}
+		panic(fmt.Sprintf("Image '%s', is not a paletted PNG", src))
 	}
 
 	pimg, _ := img.(*image.Paletted)
 	if len(pimg.Palette) > 16 {
-		println("Image '", src, "' has more than 16 colors (", len(pimg.Palette), "'")
-		os.Exit(1)
+		panic(fmt.Sprintf("Image '%s' has more than 16 colors (found %d)", src, len(pimg.Palette)))
 	}
 
 	// Make sure transparency if properly set (index is 15).
@@ -417,8 +408,7 @@ func adjustRectToTile(img *image.Paletted, tileDim int) {
 // Extract all ith bit of each byte in the array
 func mask(mask byte, bytes []byte) byte {
 	if len(bytes) != 8 {
-		println("Requested masking of array len != 8")
-		os.Exit(1)
+		panic("Requested masking of array len != 8")
 	}
 
 	r := uint8(0)
@@ -493,8 +483,7 @@ func allocateShape(allocator *allocator, img *image.Paletted, tileDim int) []All
 			}
 			tileId, err := allocator.any()
 			if err != nil {
-				println("Out of GFX memory (dim=", tileDim, ")")
-				os.Exit(1)
+				panic(fmt.Sprintf("Out of GFX memory (dim=%d)", tileDim))
 			}
 			allocation := Allocation{x, y, tileId}
 			tiles = append(tiles, allocation)
@@ -513,8 +502,7 @@ func allocateSprite(allocator *allocator, img *image.Paletted, tileDim int) []Al
 	allocated, err := allocator.allocSprite(width, height)
 	if err != nil {
 		// TODO
-		println("Unable to allocate block")
-		os.Exit(1)
+		panic("Unable to allocate block")
 	}
 
 	var allocations []Allocation

@@ -124,6 +124,27 @@ func main() {
 	chunLi.Init("chunLi.svg", rom, GetPalette(6))
 	chunLi.AddBlock(0x66, 0xA6, 6, 6, 0, 0)
 	chunLi.Finalize()
+
+	var honda2 Pose
+	honda2.Init("honda2.svg", rom, GetPalette(2))
+	honda2.AddBlock(0x0e, 0x52, 4, 5, 0, 0)
+	honda2.AddBlock(0x0e, 0x61, 1, 5, -16, 16)
+	honda2.AddBlock(0x0e, 0x60, 1, 2, -32, 16)
+
+	honda2.AddBlock(0x0e, 0x66, 1, 5, 64, 16)
+	// Far right leg
+	honda2.AddBlock(0x0e, 0x77, 1, 4, 80, 32)
+
+	// Hands
+	honda2.AddBlock(0x0e, 0x56, 2, 1, -64, 32)
+	honda2.AddBlock(0x0e, 0x50, 2, 1, -64, 16)
+	honda2.AddBlock(0x0e, 0xa2, 1, 1, 0, 80)
+	honda2.Finalize()
+
+	var zanghief Pose
+	zanghief.Init("zanghief.svg", rom, GetPalette(7))
+	zanghief.AddBlock(0x89, 0x05, 6, 8, 0, 0)
+	zanghief.Finalize()
 }
 
 

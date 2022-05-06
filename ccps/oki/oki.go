@@ -4,8 +4,8 @@ import (
 	"ccps/boards"
 	"ccps/code"
 	"ccps/sites"
+	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 )
 
@@ -39,8 +39,7 @@ func Build(v bool, board *boards.Board) ([]byte, *code.Code) {
 		wavPath := sites.SfxSrcPath + file.Name()
 		wav, err := LoadWav(wavPath)
 		if err != nil {
-			println("Unable to open wav file", wavPath)
-			os.Exit(1)
+			panic(fmt.Sprintf("Unable to open wav file '%s'", wavPath))
 		}
 
 		// sox test.wav -r 7575 -b 8 -c 1 outfile.wav
