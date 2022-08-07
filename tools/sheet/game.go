@@ -27,7 +27,7 @@ type RomSrc struct {
 	src_offset int
 	src_length int
 	dst_offset int
-	skip       int
+	dst_stride int
 }
 
 type Game struct {
@@ -138,7 +138,7 @@ func (game *Game) desinterleave(roms []RomSrc, dstROM []byte) bool {
 			srcOffset := rom.src_offset + j*rom.word_size
 			src := content[srcOffset : srcOffset+rom.word_size]
 
-			dstOffset := rom.dst_offset + j*rom.skip
+			dstOffset := rom.dst_offset + j*rom.dst_stride
 			dst := dstROM[dstOffset : dstOffset+rom.word_size]
 
 			for w := 0; w < rom.word_size; w++ {
@@ -196,6 +196,10 @@ func (game *Game) ExtractPalette() {
 		f.WriteString(fmt.Sprintf("Palette %d<br/>\n", i))
 		f.WriteString(palette.toHTML())
 	}
+
+	// Also save palette to disk
+	filename = fmt.Sprintf("%s/code.bin", game.extractFolder())
+	os.WriteFile(filename, game.codeROM, 0666)
 }
 
 func (game *Game) w(sheetID int, p *Palette) {
