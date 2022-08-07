@@ -145,6 +145,16 @@ func main() {
 	zanghief.Init("zanghief.svg", rom, GetPalette(7))
 	zanghief.AddBlock(0x89, 0x05, 6, 8, 0, 0)
 	zanghief.Finalize()
+
+	var guileCalve Pose
+	guileCalve.Init("guileCalve.svg", rom, GetPalette(4))
+	guileCalve.AddBlock(0x77, 0x52, 1, 7, 0, 0)
+	guileCalve.AddBlock(0x77, 0xb1, 1, 1, -16, 16*6)
+	guileCalve.AddBlock(0x77, 0x53, 1, 6, 16, 0)
+	guileCalve.AddBlock(0x77, 0x64, 2, 6, 32, 16)
+	guileCalve.AddBlock(0x77, 0x95, 2, 3, 3*16, 4 * 16)
+	guileCalve.AddBlock(0x77, 0xA7, 1, 2, 5 * 16, 5 * 16)
+	guileCalve.Finalize()
 }
 
 

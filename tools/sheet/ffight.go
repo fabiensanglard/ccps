@@ -47,6 +47,7 @@ func makeFFight() FFight {
 	}
 	game.paletteAddr = 0x8ACBA
 
+
 	return game
 }
 
