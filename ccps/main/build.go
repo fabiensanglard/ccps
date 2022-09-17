@@ -15,7 +15,7 @@ import (
 func build(args []string) {
 	fs := flag.NewFlagSet("build", flag.ContinueOnError)
 	verbose := fs.Bool("v", false, "Verbose mode")
-	target := fs.String("b", "", "Target board")
+	target := fs.String("b", "sf2", "Target board")
 	if err := fs.Parse(args); err != nil {
 		println(fmt.Sprintln("Cmd parsing error '%s'", err))
 	}

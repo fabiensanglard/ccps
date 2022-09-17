@@ -34,7 +34,7 @@ func postWithBytes(args []string,
 	srcZ80Main []byte) {
 	fs := flag.NewFlagSet("postFlags", flag.ContinueOnError)
 	verbose := fs.Bool("v", false, "Verbose mode")
-	target := fs.String("b", "", "Target board")
+	target := fs.String("b", "sf2", "Target board")
 
 	if err := fs.Parse(args); err != nil {
 		panic(fmt.Sprintf("Cmd parsing error '%s'", err))
