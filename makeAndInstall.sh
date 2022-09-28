@@ -1,3 +1,3 @@
-cd ccps/main
+cd main
 go build && go install
 cd ../..
