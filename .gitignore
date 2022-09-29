@@ -1,5 +1,4 @@
 .DS_Store
-go.sum
 roms/
 pics/
 *.rom
@@ -13,5 +12,5 @@ pics/
 *.noi
 *.asm
 out/
-ccps/main/ccps
+main/ccps
 .tmp
