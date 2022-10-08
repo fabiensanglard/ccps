@@ -4,7 +4,6 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/base64"
-	"flag"
 	"fmt"
 	"image"
 	"image/color"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/fabiensanglard/ccps/boards"
 	"github.com/fabiensanglard/ccps/sites"
+	"github.com/spf13/cobra"
 )
 
 type Palette struct {
@@ -39,27 +39,22 @@ var greyPalette = Palette{[16]color.RGBA{
 	{0x00, 0x00, 0x00, 0x00},
 }}
 
-func dumpGFX(args []string) {
-	fs := flag.NewFlagSet("gfx", flag.ContinueOnError)
-	verbose := fs.Bool("v", false, "Verbose mode")
-	boardName := fs.String("b", "sf2", "Target board")
-
-	if err := fs.Parse(args); err != nil {
-		panic(fmt.Sprintf("Cmd parsing error '%s'", err))
-	}
-
-	board := boards.Get(*boardName)
+func dumpGFX(cmd *cobra.Command, args []string) {
+	board := boards.Get(targetBoard)
 
 	dumpFolder := "dump/gfx/"
-	err := os.RemoveAll(dumpFolder)
-	err = os.MkdirAll(dumpFolder, 0777)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to create GFX dump folder '%s' : '%s'", dumpFolder, err.Error()))
+	if err := os.RemoveAll(dumpFolder); err != nil {
+		cmd.PrintErr(err)
+		os.Exit(1)
+	}
+	if err := os.MkdirAll(dumpFolder, 0777); err != nil {
+		cmd.Printf("Unable to create GFX dump folder '%s' : '%s'\n", dumpFolder, err.Error())
+		os.Exit(1)
 	}
 
 	// Desinterleave
 	rom := make([]byte, board.GFX.Size)
-	desinterleave(board.GFX.Roms, rom)
+	desinterleave(cmd, board.GFX.Roms, rom)
 
 	// Dump ROM
 	var wg sync.WaitGroup
@@ -70,16 +65,16 @@ func dumpGFX(args []string) {
 		go func(i int) {
 			defer wg.Done()
 			area := board.GFXAreas[i]
-			if *verbose {
-				println("Dumping GFX type", area.Dim)
+			if verbose {
+				cmd.Println("Dumping GFX type", area.Dim)
 			}
-			dumpSheets(i, dumpFolder, area.Dim, rom[area.Start:area.Start+area.Size])
+			dumpSheets(cmd, i, dumpFolder, area.Dim, rom[area.Start:area.Start+area.Size])
 		}(i)
 	}
 	wg.Wait()
 }
 
-func dumpSheets(prefix int, toDir string, dim int, rom []byte) {
+func dumpSheets(cmd *cobra.Command, prefix int, toDir string, dim int, rom []byte) {
 	bytesPerSheet := 256 * 256 / 2
 	numSheets := len(rom) / bytesPerSheet
 
@@ -91,18 +86,18 @@ func dumpSheets(prefix int, toDir string, dim int, rom []byte) {
 			defer wg.Done()
 			offset := i * bytesPerSheet
 			path := fmt.Sprintf("%s%d-%d.svg", toDir, prefix, i)
-			dumpsheet(path, dim, rom[offset:offset+bytesPerSheet])
+			dumpsheet(cmd, path, dim, rom[offset:offset+bytesPerSheet])
 		}(i)
 	}
 	wg.Wait()
 }
 
-func drawLine(line []byte, x int, y int, img *image.RGBA, dim int) {
+func drawLine(cmd *cobra.Command, line []byte, x int, y int, img *image.RGBA, dim int) {
 	// 4 bytes -> 8 pixels
 	// 8 bytes -> 16 pixels
 	// 16 bytes -> 32 pixels
 	if len(line) != dim/2 {
-		println("Unexpected line length for dim ", dim, ". Expected", dim/8, "but got", len(line))
+		cmd.Println("Unexpected line length for dim ", dim, ". Expected", dim/8, "but got", len(line))
 	}
 	// 8 pixels -> read  4 bytes
 	//16 pixels -> read  8 bytes
@@ -148,34 +143,36 @@ func drawLine(line []byte, x int, y int, img *image.RGBA, dim int) {
 	}
 }
 
-func drawTile(tile []byte, imgX int, imgY int, img *image.RGBA, dim int) {
+func drawTile(cmd *cobra.Command, tile []byte, imgX int, imgY int, img *image.RGBA, dim int) {
 	bytesPerLine := dim / 2
 	for i := 0; i < dim; i++ {
 		offset := i * bytesPerLine
-		drawLine(tile[offset:offset+bytesPerLine], imgX, imgY+i, img, dim)
+		drawLine(cmd, tile[offset:offset+bytesPerLine], imgX, imgY+i, img, dim)
 	}
 }
 
-func dumpsheet(path string, dim int, sheet []byte) {
+func dumpsheet(cmd *cobra.Command, path string, dim int, sheet []byte) {
 	img := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{256, 256}})
 	tilePerAxis := 256 / dim
 	bytesPerTile := dim * dim / 2
 	for y := 0; y < tilePerAxis; y++ {
 		for x := 0; x < tilePerAxis; x++ {
 			offset := (x + y*tilePerAxis) * bytesPerTile
-			drawTile(sheet[offset:offset+bytesPerTile], x*dim, y*dim, img, dim)
+			drawTile(cmd, sheet[offset:offset+bytesPerTile], x*dim, y*dim, img, dim)
 		}
 	}
 
 	var pngPayload bytes.Buffer
 	err := png.Encode(&pngPayload, img)
 	if err != nil {
-		panic(fmt.Sprintf("Unable to dump GFX '%s'", err.Error()))
+		cmd.Printf("Unable to dump GFX '%s'\n", err.Error())
+		os.Exit(1)
 	}
-	png2svg(&pngPayload, path, 16)
+	png2svg(cmd, &pngPayload, path, 16)
 }
 
 // Template for 16x16 tile sheets
+//
 //go:embed svgParts/16_top.txt
 var svgTop16 []byte
 
@@ -185,10 +182,10 @@ var svgMid16 []byte
 //go:embed svgParts/16_bot.txt
 var svgBot16 []byte
 
-func png2svg(payload *bytes.Buffer, out string, bank int) {
+func png2svg(cmd *cobra.Command, payload *bytes.Buffer, out string, bank int) {
 	f, err := os.Create(out)
 	if err != nil {
-		fmt.Println(err)
+		cmd.PrintErr(err)
 		return
 	}
 	defer f.Close()
@@ -200,12 +197,13 @@ func png2svg(payload *bytes.Buffer, out string, bank int) {
 	f.WriteString(string(svgBot16))
 }
 
-func desinterleave(srcs []boards.ROM, dst []byte) {
+func desinterleave(cmd *cobra.Command, srcs []boards.ROM, dst []byte) {
 	for _, rom := range srcs {
 		path := sites.OutDir + rom.Filename
 		content, err := os.ReadFile(path)
 		if err != nil {
-			panic(fmt.Sprintf("Unable to open '%s'", path))
+			cmd.Printf("Unable to open '%s'\n", path)
+			os.Exit(1)
 		}
 
 		for j := 0; j < rom.Size/rom.WordSize; j++ {
