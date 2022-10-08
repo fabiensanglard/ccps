@@ -83,29 +83,26 @@ func BoolFlagBuilder(dst *bool, long, short string, defaultValue bool, help stri
 
 func init() {
 	verboseFlag := BoolFlagBuilder(&verbose, "verbose", "v", false, "enables the verbose mode")
+	verboseFlag(rootCmd)
+
 	targetBoardFlag := StringFlagBuilder(&targetBoard, "board", "b", "", "target board")
-	verboseFlag(buildCmd)
+
 	targetBoardFlag(buildCmd)
 	buildCmd.MarkFlagRequired("board")
 
 	installDestDirFlag := StringFlagBuilder(&installDestDir, "destination", "d", "", "destination directory")
-	verboseFlag(installCmd)
 	installDestDirFlag(installCmd)
 	installCmd.MarkFlagRequired("destination")
 
-	verboseFlag(dumpGFXCmd)
 	targetBoardFlag(dumpGFXCmd)
 	dumpGFXCmd.MarkFlagRequired("board")
 
-	verboseFlag(dumpSFXCmd)
 	targetBoardFlag(dumpSFXCmd)
 	dumpSFXCmd.MarkFlagRequired("board")
 
-	verboseFlag(postCmd)
 	targetBoardFlag(postCmd)
 	postCmd.MarkFlagRequired("board")
 
-	verboseFlag(helloWorldCmd)
 	targetBoardFlag(helloWorldCmd)
 	helloWorldCmd.MarkFlagRequired("board")
 
