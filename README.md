@@ -1,6 +1,6 @@
 # CPS-1 SDK
 
-This a development kit for CPS-1 board.
+This a development kit for CPS-1 board. See tutorial on [this page](https://fabiensanglard.net/ccps).
 
 Compilers required
 ==================
