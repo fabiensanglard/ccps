@@ -1,3 +1,4 @@
 cd cmd/ccps
-go build && go install
+go build
+sudo mv ccps /usr/local/bin
 cd ../..
