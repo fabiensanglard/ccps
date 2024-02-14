@@ -47,8 +47,9 @@ func (c *Codec) encodeStep(sample int16) byte {
 
 func (c *Codec) encode(pcm []int16) []byte {
 	cursor := 0
-	adpcm := make([]byte, len(pcm)/2)
-	for i := 0; i < len(pcm); i += 2 {
+	size := len(pcm)
+	adpcm := make([]byte, size/2)
+	for i := 0; i < size - 1; i += 2 {
 		msb := c.encodeStep(pcm[i]) & 0xF
 		lsb := c.encodeStep(pcm[i+1]) & 0xF
 		adpcm[cursor] = (msb << 4) | lsb
