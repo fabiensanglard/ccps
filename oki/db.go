@@ -106,11 +106,12 @@ func (o *OkiRom) writeHeader(header []byte) {
 		panic(fmt.Sprintf("Unexpected oki header size. Got %d but expected %d", len(header), headerSize))
 	}
 
-	var cursor uint32 = 0
+	var cursor uint32 = headerSize + 1
 	for i, phrase := range o.Phrases {
 		entry := OkiRomEntry{}
 		entry.start = cursor
 		entry.end = cursor + uint32(len(phrase)) - 1
+		cursor = entry.end + 1
 		headerOffset := i * indexEntrySize
 		o.writeEntry(entry, header[headerOffset:headerOffset+indexEntrySize])
 	}
