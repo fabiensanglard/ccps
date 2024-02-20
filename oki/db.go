@@ -92,6 +92,12 @@ func (o *OkiRom) genROM(size int64) []byte {
 		totalSize += uint32(len(phase))
 	}
 
+	if int64(totalSize) > size {
+		panic(fmt.Sprintf("Samples too big for ROM space %d, max=%d", totalSize, size))
+	}
+
+	fmt.Println(fmt.Sprintf("ADPCM ROM space at %d%% capacity", int64(totalSize)*100.0/size))
+
 	rom := make([]byte, size)
 
 	header := rom[:headerSize]
