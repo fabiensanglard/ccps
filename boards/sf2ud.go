@@ -37,7 +37,7 @@ func sf2udBoard() *Board {
 	}
 
 	sf2ud.Oki.Size = 0x40000
-	sf2ud.Oki.Epromer = okisf2udEpromer
+	sf2ud.Oki.Epromer = sf2udOkiEpromer
 	sf2ud.Oki.Roms = []ROM{
 		{Filename: "sf2_18.11c", Size: 0x20000},
 		{Filename: "sf2_19.12c", Size: 0x20000},
@@ -124,7 +124,7 @@ func sf2udM68kEPromer(r []byte, outputDir string) {
 	writeToFile(r[3*ROM_SIZE+1:], 1, 2, ROM_SIZE, outputDir+"sf2_36b.10f")
 }
 
-func okisf2udEpromer(rom []byte, outDir string) {
+func sf2udOkiEpromer(rom []byte, outDir string) {
 	if rom == nil {
 		return
 	}
