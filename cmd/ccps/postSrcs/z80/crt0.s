@@ -6,6 +6,7 @@
 ; Z-80 starts here!
 ;------------------
 .org 0
+   di                     ; Disable interrupts
    jp init  
 
 ;--------------
@@ -25,18 +26,19 @@
 init:
 
 ; Clear RAM at $F800-$FFFF
-   ld      (#0xF800),a     ; set $F800 = 0
-   ld      hl,#0xF800      ; 00 value is at $F800
-   ld      de,#0xF801      ; write sequence begins at $F801
-   ld      bc,#0x7FF       ; end at $FFFF
-   ldir                    ; clear out memory
+   ld    (#0xF800),a     ; set $F800 = 0
+   ld    hl,#0xF800      ; 00 value is at $F800
+   ld    de,#0xF801      ; write sequence begins at $F801
+   ld    bc,#0x7FF       ; end at $FFFF
+   ldir                  ; clear out memory
 
-   ld  sp,#0xd7ff    ; Setup stack
-   IM 1              ; Set Interrupt mode 1
-   call  gsinit      ; Init global variables
+   ld    sp,#0xd7ff      ; Setup stack
+   IM 1                  ; Set Interrupt mode 1
+   call  gsinit          ; Init global variables
 main:  
-   call  _main       ; Infinite loop
-   jp    _exit       ; Never happens
+   ei                    ; Enable interrupts before main
+   call  _main           ; Infinite loop
+   jp    _exit           ; Never happens
 
    ; Ordering of segments for the linker.
    .area _HOME
