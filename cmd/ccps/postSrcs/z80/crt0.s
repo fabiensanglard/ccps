@@ -23,7 +23,14 @@
 ;--------------
 .org 0x100
 init:
-   
+
+; Clear RAM at $F800-$FFFF
+   ld      (#0xF800),a     ; set $F800 = 0
+   ld      hl,#0xF800      ; 00 value is at $F800
+   ld      de,#0xF801      ; write sequence begins at $F801
+   ld      bc,#0x7FF       ; end at $FFFF
+   ldir                    ; clear out memory
+
    ld  sp,#0xd7ff    ; Setup stack
    IM 1              ; Set Interrupt mode 1
    call  gsinit      ; Init global variables
@@ -52,7 +59,7 @@ _exit:
 ; Copy values from ROM > RAM.
 ;----------------------------
    .area _GSINIT
-gsinit::
+gsinit:
    ld  bc, #l__INITIALIZER
    ld  a, b
    or  a, c
