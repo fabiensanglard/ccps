@@ -13,9 +13,9 @@ unsigned char latch = 0;
 unsigned char lastLatch = NO_OP;
 
 void YM2151_writeReg(char adr, char dat) {
-    while(YM2151_DAT == 0x80); // Wait until YM2151 is ready for write
-    YM2151_ADR = adr;
-    YM2151_DAT = dat;
+  while(YM2151_DAT == 0x80); // Wait until YM2151 is ready for write
+  YM2151_ADR = adr;
+  YM2151_DAT = dat;
 }
 
 void interrupt() {
