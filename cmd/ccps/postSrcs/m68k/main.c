@@ -40,6 +40,30 @@ GFXRAM Palette palettes[32];
 CPSA_REG WORD cpsa_reg[0x20] = {};
 CPSB_REG WORD cpsb_reg[0x20] = {};
 
+// Z80 Commands and latches, use 0x800181 for BYTE selection
+#define Z80_CMD *((volatile BYTE*)0x800181)
+#define sendZ80(cmd) Z80_CMD = cmd
+
+// Z80 Commands
+#define Z80_NO_OP 0xFF
+
+// Register initializations
+void hardwareInit() {
+    sendZ80(Z80_NO_OP);
+
+    cpsa_reg[CPSA_REG_SCROLL1_SCROLLX] = 0x0000;
+    cpsa_reg[CPSA_REG_SCROLL1_SCROLLY] = 0x0000;
+    cpsa_reg[CPSA_REG_SPRITES_BASE] = (WORD)(((DWORD)sprites) >> 8);;
+    cpsa_reg[CPSA_REG_SCROLL1_BASE] = 0x90c0;
+    cpsa_reg[CPSA_REG_SCROLL2_BASE] = 0x9040;
+    cpsa_reg[CPSA_REG_SCROLL3_BASE] = 0x9080;
+    cpsa_reg[CPSA_REG_OTHER_BASE] = 0x9200;
+
+    cpsb_reg[CPSB_REG_CTRL] = 0x12c2;
+    cpsa_reg[CPSA_REG_VIDEOCONTROL] = 0x003e;
+    cpsb_reg[CPSB_REG_PALETTE_CONTROL] = 0x003f;
+    cpsa_reg[CPSA_REG_PALETTE_BASE] = (WORD)(((DWORD)palettes) >> 8);
+}
 
 void setPalette(int page, int paletteID, const Palette* palette) {
 
@@ -48,20 +72,20 @@ void setPalette(int page, int paletteID, const Palette* palette) {
    }
 
    // Request upload palette page to sprites
-   cpsb_reg[CPSB_REG_PALETTE_CONTROL] =  1;
+   cpsb_reg[CPSB_REG_PALETTE_CONTROL] =  0x3f;
 
    // Set palette base
    cpsa_reg[CPSA_REG_PALETTE_BASE] = (WORD)(((DWORD)palettes) >> 8);
 }
 
-static const Palette p = <PALETTE>;
+static const Palette p = {0xF111,0xFFD9,0xFFB9,0xFE97,0xFC86,0xF965,0xF643,0xFB00,0xFFFF,0xFEEC,0xFDCA,0xFBA8,0xFA87,0xF765,0xFF00,0x0000,};
 void draw() {
    setPalette(0, 2, &p); // Upload palette to Palette 2
    Sprite* s = &sprites[0];
    s->x = 220;
    s->y = 100;
-   s->tile = <TILE>;
-   s->attributes = 2 |  <TILE_HEIGHT> << 12 | <TILE_WIDTH> << 8; // user Palette 2 since it is where we placed it.
+   s->tile = 4;
+   s->attributes = 2 |  5 << 12 | 3 << 8; // user Palette 2 since it is where we placed it.
 
    sprites[1].attributes	= 0xFF00; // Last sprite marker
 
@@ -70,15 +94,15 @@ void draw() {
 unsigned int vsyncCounter = 0;
 unsigned int soundID = 0;
 void onVSync() {
-    draw();
+   draw();
    cpsa_reg[CPSA_REG_SPRITES_BASE] = (WORD)(((DWORD)sprites) >> 8);
 
    if (vsyncCounter > 60) {
-   	*((char*)0x800180) = (45 + soundID);
+   	sendZ80(45 + soundID);
    	soundID++;
     vsyncCounter = 0;
    } else {
-   	*((char*)0x800180) = 0xFF;
+   	sendZ80(Z80_NO_OP);
    }
    vsyncCounter++;
 }

@@ -92,6 +92,12 @@ func (o *OkiRom) genROM(size int64) []byte {
 		totalSize += uint32(len(phase))
 	}
 
+	if int64(totalSize) > size {
+		panic(fmt.Sprintf("Samples too big for ROM space %d, max=%d", totalSize, size))
+	}
+
+	fmt.Println(fmt.Sprintf("ADPCM ROM space at %d%% capacity", int64(totalSize)*100.0/size))
+
 	rom := make([]byte, size)
 
 	header := rom[:headerSize]
@@ -106,11 +112,12 @@ func (o *OkiRom) writeHeader(header []byte) {
 		panic(fmt.Sprintf("Unexpected oki header size. Got %d but expected %d", len(header), headerSize))
 	}
 
-	var cursor uint32 = 0
+	var cursor uint32 = headerSize + 1
 	for i, phrase := range o.Phrases {
 		entry := OkiRomEntry{}
 		entry.start = cursor
 		entry.end = cursor + uint32(len(phrase)) - 1
+		cursor = entry.end + 1
 		headerOffset := i * indexEntrySize
 		o.writeEntry(entry, header[headerOffset:headerOffset+indexEntrySize])
 	}

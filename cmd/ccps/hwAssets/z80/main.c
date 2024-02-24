@@ -12,6 +12,12 @@ __at (0xF008) char LATCH1;
 unsigned char latch = 0;
 unsigned char lastLatch = NO_OP;
 
+void YM2151_writeReg(char adr, char dat) {
+  while(YM2151_DAT == 0x80); // Wait until YM2151 is ready for write
+  YM2151_ADR = adr;
+  YM2151_DAT = dat;
+}
+
 void interrupt() {
   latch = LATCH1;
 
@@ -37,24 +43,22 @@ void requestInterrupt() {
   // write 0xC8 in the A1 and 0 in A2 resulting in value 0xC8 * 4 = 800.
 
   // 8 msb
-  YM2151_ADR = YM2151_REG_CLKA1;
-  YM2151_DAT = 0xC8;
-
+  YM2151_writeReg(YM2151_REG_CLKA1, 0xC8);
   // 2 lsb
-  YM2151_ADR = YM2151_REG_CLKA2;
-  YM2151_DAT = 0x00;
+  YM2151_writeReg(YM2151_REG_CLKA2, 0x00);
+  // Re-enable timer A
+  YM2151_writeReg(YM2151_REG_CTRL, 0x15);
 }
 
 void main() {
-  // Enable timer A
-  YM2151_ADR = YM2151_REG_CTRL;
-  YM2151_DAT = 0x15;
+  // Reset timer flags
+  YM2151_writeReg(YM2151_REG_CTRL, 0x30);
 
   // Request the first interrupt (after that the interrupt handler
   // will call requestInterrupt() after calling interrupt()).
   requestInterrupt();
 
+  // infinite loop, all will be done via timer and interrupts
   while(1) {
-    interrupt();
-   }
+  }
 }

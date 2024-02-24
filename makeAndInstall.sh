@@ -1,4 +1,4 @@
 cd cmd/ccps
-go build
-sudo mv ccps /usr/local/bin
+go build --buildvcs=false
+sudo cp -R ccps /usr/local/bin
 cd ../..
