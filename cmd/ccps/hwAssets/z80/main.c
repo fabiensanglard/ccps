@@ -54,8 +54,9 @@ void main() {
   // Reset timer flags
   YM2151_writeReg(YM2151_REG_CTRL, 0x30);
 
-  // Request the first interrupt (after that the interrupt handler
-  // will call requestInterrupt() after calling interrupt()).
+  // Request the first interrupt. The interrupt will trigger a jump to
+  // intructions at 0x38 (see crt0.s) which will call interrupt and
+  // then requestInterrupt.
   requestInterrupt();
 
   // infinite loop, all will be done via timer and interrupts

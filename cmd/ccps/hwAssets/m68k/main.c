@@ -51,19 +51,27 @@ unsigned int vsyncCounter = 0;
 #define Z80_NO_OP 0xFF
 
 void hardwareInit() {
+    // Set Z80 latch to 0xFF so nothing will be executed
     sendZ80(Z80_NO_OP);
 
     cpsa_reg[CPSA_REG_SCROLL1_SCROLLX] = 0x0000;
     cpsa_reg[CPSA_REG_SCROLL1_SCROLLY] = 0x0000;
+    // Initialize CPSA&CPSB registers to the memory locations
+    // sprites starts at 0x900000 in the example, Base 1, 2, 3 and
+    //  other point to 0x90c000, 0x904000, 0x908000 and 0x920000
     cpsa_reg[CPSA_REG_SPRITES_BASE] = (WORD)(((DWORD)sprites) >> 8);;
     cpsa_reg[CPSA_REG_SCROLL1_BASE] = 0x90c0;
     cpsa_reg[CPSA_REG_SCROLL2_BASE] = 0x9040;
     cpsa_reg[CPSA_REG_SCROLL3_BASE] = 0x9080;
     cpsa_reg[CPSA_REG_OTHER_BASE] = 0x9200;
 
+    // The following two are taken from what sf2 uses
     cpsb_reg[CPSB_REG_CTRL] = 0x12c2;
     cpsa_reg[CPSA_REG_VIDEOCONTROL] = 0x003e;
+    // This defines the size of the palette, 64 in this case.
+    // We are using only one, and sending 1 would work
     cpsb_reg[CPSB_REG_PALETTE_CONTROL] = 0x003f;
+    // This array starts after sprites in GFX RAM, tell CPSA where it is
     cpsa_reg[CPSA_REG_PALETTE_BASE] = (WORD)(((DWORD)palettes) >> 8);
 }
 
@@ -98,8 +106,11 @@ void draw() {
 
 int onVSync() {
   draw();
+  // Tell CPS-A where the sprites are.
   cpsa_reg[CPSA_REG_SPRITES_BASE] = (WORD)(((DWORD)sprites) >> 8);
 
+  // We wait until the 60 frame so that there isn't a race condition with the Z80
+  // and it is ready for playback.
   if (vsyncCounter == 60) {
     sendZ80(1);
   }
