@@ -54,23 +54,44 @@ void hardwareInit() {
     // Set Z80 latch to 0xFF so nothing will be executed
     sendZ80(Z80_NO_OP);
 
+    // Scrolls at 0
     cpsa_reg[CPSA_REG_SCROLL1_SCROLLX] = 0x0000;
     cpsa_reg[CPSA_REG_SCROLL1_SCROLLY] = 0x0000;
     // Initialize CPSA&CPSB registers to the memory locations
     // sprites starts at 0x900000 in the example, Base 1, 2, 3 and
     //  other point to 0x90c000, 0x904000, 0x908000 and 0x920000
-    cpsa_reg[CPSA_REG_SPRITES_BASE] = (WORD)(((DWORD)sprites) >> 8);;
+    cpsa_reg[CPSA_REG_SPRITES_BASE] = (WORD)(((DWORD)sprites) >> 8);
     cpsa_reg[CPSA_REG_SCROLL1_BASE] = 0x90c0;
     cpsa_reg[CPSA_REG_SCROLL2_BASE] = 0x9040;
     cpsa_reg[CPSA_REG_SCROLL3_BASE] = 0x9080;
     cpsa_reg[CPSA_REG_OTHER_BASE] = 0x9200;
 
-    // The following two are taken from what sf2 uses
-    cpsb_reg[CPSB_REG_CTRL] = 0x12c2;
-    cpsa_reg[CPSA_REG_VIDEOCONTROL] = 0x003e;
-    // This defines the size of the palette, 64 in this case.
-    // We are using only one, and sending 1 would work
-    cpsb_reg[CPSB_REG_PALETTE_CONTROL] = 0x003f;
+    // 0 b00000000_00001000 Enable SCROLL1
+    // 0 b00000000_00010000 Enable SCROLL2
+    // 0 b00000000_00100000 Enable SCROLL3
+    // 0 b00000000_00000000 Cannot control STAR1
+    // 0 b00000000_00000000 Cannot control STAR2
+    // 0 b00000000_11000000 Layer to draw first
+    // 0 b00000011_00000000 Layer to draw second
+    // 0 b00001100_00000000 Layer to draw third
+    // 0 b00110000_00000000 Layer to draw last
+    // Layer IDs : OBJ =0 , SCROLL1 =1 , SCROLL2 =2 , SRCOLL3 =3
+    // OBJ, SCROLL 1, 2 & 3. Scroll disabled
+    cpsb_reg[CPSB_REG_LAYER_CTRL] = 0x3900;
+
+    // 0 b00000000_0000001 Enable rowscroll
+    // 0 b00000000_1000000 Enable Flip Screen 90 degrees cw
+    cpsa_reg[CPSA_REG_VIDEOCONTROL] = 0x0000;
+    
+    // 0 b00000000_00000001 Upload OBJ palette page
+    // 0 b00000000_00000010 Upload SCR1 palette page
+    // 0 b00000000_00000100 Upload SCR2 palette page
+    // 0 b00000000_00001000 Upload SCR3 palette page
+    // 0 b00000000_00010000 Upload STAR1 palette page
+    // 0 b00000000_00100000 Upload STAR2 palette page
+    // Just upload OBJ palette
+    cpsb_reg[CPSB_REG_PALETTE_CONTROL] = 0x0001;
+
     // This array starts after sprites in GFX RAM, tell CPSA where it is
     cpsa_reg[CPSA_REG_PALETTE_BASE] = (WORD)(((DWORD)palettes) >> 8);
 }

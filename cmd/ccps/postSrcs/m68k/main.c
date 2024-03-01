@@ -59,7 +59,7 @@ void hardwareInit() {
     cpsa_reg[CPSA_REG_SCROLL3_BASE] = 0x9080;
     cpsa_reg[CPSA_REG_OTHER_BASE] = 0x9200;
 
-    cpsb_reg[CPSB_REG_CTRL] = 0x12c2;
+    cpsb_reg[CPSB_REG_LAYER_CTRL] = 0x12c2;
     cpsa_reg[CPSA_REG_VIDEOCONTROL] = 0x003e;
     cpsb_reg[CPSB_REG_PALETTE_CONTROL] = 0x003f;
     cpsa_reg[CPSA_REG_PALETTE_BASE] = (WORD)(((DWORD)palettes) >> 8);

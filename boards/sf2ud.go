@@ -43,7 +43,33 @@ func sf2udBoard() *Board {
 		{Filename: "sf2_19.12c", Size: 0x20000},
 	}
 
+	// static const struct gfx_range mapper_STF29_table[] =
+	// {
+		// verified from PAL dump:
+		// bank 0 = pin 19 (ROMs 5,6,7,8)
+		// bank 1 = pin 14 (ROMs 14,15,16,17)
+		// bank 2 = pin 12 (ROMS 24,25,26,27)
+	
+		/* type 		   start	end 	 bank */
+		// { GFXTYPE_SPRITES, 0x00000, 0x07fff, 0 },
+	
+		// { GFXTYPE_SPRITES, 0x08000, 0x0ffff, 1 },
+	
+		// { GFXTYPE_SPRITES, 0x10000, 0x11fff, 2 },
+		// { GFXTYPE_SCROLL3, 0x02000, 0x03fff, 2 },
+		// { GFXTYPE_SCROLL1, 0x04000, 0x04fff, 2 },
+		// { GFXTYPE_SCROLL2, 0x05000, 0x07fff, 2 },
+		// { 0 }
+	// };
+
+	// OBJ	= 0x8000 + 0x2000 + 0x2000 = 0x12000 * 0x40 = 0x480000 (1)
+	// SCR1 = 0x1000 * 0x40 = 0x40000 (2)
+	// SCR2 = 0x3000 * 0x40 = 0xC0000 (3)
+	// SCR3 = 0x2000 * 0x40 = 0x80000 (1)
+
 	// Finding size can be done via PAL bank mapper (size * 64)
+	// GFXArea; Start/Size/Dim
+	// OBJ, SCR1, SCR2, SCR3
 	sf2ud.GFXAreas = [4]GFXArea{
 		{0, 0x480000, 16},
 		{0x480000, 0x80000, 32},
