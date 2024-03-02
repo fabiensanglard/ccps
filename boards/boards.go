@@ -66,6 +66,9 @@ func Get(name string) *Board {
 	if name == "ffight" {
 		return ffightBoard()
 	}
+    if name == "ffightu" {
+		return ffightuBoard()
+	}
 	panic(fmt.Sprintln("Unknown board '%s'", name))
 	return &Board{}
 }

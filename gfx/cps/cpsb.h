@@ -30,6 +30,10 @@
 
 #if CPSB_VERSION == 04
 #define CPSB_REG_LAYER_CTRL      (0x2e / 2)
+#define CPSB_REG_LAYER_PRI0      (0x26 / 2)
+#define CPSB_REG_LAYER_PRI1      (0x30 / 2)
+#define CPSB_REG_LAYER_PRI2      (0x28 / 2)
+#define CPSB_REG_LAYER_PRI3      (0x32 / 2)
 #define CPSB_REG_PALETTE_CONTROL (0x2a / 2)
 #endif // CPSB_VERSION == 04
 
