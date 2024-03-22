@@ -2,11 +2,10 @@ package main
 
 import (
 	_ "embed"
-	"flag"
-	"fmt"
 	"os"
 
 	"github.com/fabiensanglard/ccps/sites"
+	"github.com/spf13/cobra"
 )
 
 //go:embed hwAssets/helloworld.png
@@ -27,28 +26,25 @@ var hwSrcZ80Crt0 []byte
 //go:embed hwAssets/z80/main.c
 var hwSrcZ80Main []byte
 
-func helloWorld(args []string) {
-	postWithBytes(args, hwSrcM68kCrt0, hwSrcM68kMain, hwSrcZ80Crt0, hwSrcZ80Main)
-
-	fs := flag.NewFlagSet("hwFlags", flag.ContinueOnError)
-	v := fs.Bool("v", false, "Verbose mode")
-	fs.String("b", "", "Target board")
-	verbose := *v
-
-	if err := fs.Parse(args); err != nil {
-		panic(fmt.Sprintf("Cmd parsing error '%s'", err))
-	}
+func helloWorld(cmd *cobra.Command, args []string) {
+	postWithBytes(cmd, hwSrcM68kCrt0, hwSrcM68kMain, hwSrcZ80Crt0, hwSrcZ80Main)
 
 	if verbose {
-		println("Starting to generate HelloWorld")
+		cmd.Println("Starting to generate HelloWorld")
 	}
 
 	// Drop a helloWorld GFX
 	sites.EnsureDirGFX()
-	os.WriteFile(sites.GfxObjPath+"helloworld.png", helloWorldSprite, 0644)
+	if err := os.WriteFile(sites.GfxObjPath+"helloworld.png", helloWorldSprite, 0644); err != nil {
+		cmd.PrintErr(err)
+		os.Exit(1)
+	}
 
 	// Drop a helloWorld SFX
 	sites.EnsureDirSFX()
-	os.WriteFile(sites.SfxSrcPath+"helloworld.wav", helloWorldSound, 0644)
+	if err := os.WriteFile(sites.SfxSrcPath+"helloworld.wav", helloWorldSound, 0644); err != nil {
+		cmd.PrintErr(err)
+		os.Exit(1)
+	}
 
 }

@@ -2,40 +2,32 @@ package main
 
 import (
 	"encoding/binary"
-	"flag"
 	"fmt"
 	"os"
 
 	"github.com/fabiensanglard/ccps/boards"
 	"github.com/fabiensanglard/ccps/oki"
 	"github.com/fabiensanglard/ccps/sites"
+	"github.com/spf13/cobra"
 )
 
-func dumpSFX(args []string) {
-	fs := flag.NewFlagSet("sfx", flag.ContinueOnError)
-	verbose := fs.Bool("v", false, "Verbose mode")
-	boardName := fs.String("b", "", "Target board")
-
-	if err := fs.Parse(args); err != nil {
-		panic(fmt.Sprintf("Cmd parsing error '%s'", err))
-	}
-
-	if *boardName == "" {
-		panic("No board target provided. Aborting")
+func dumpSFX(cmd *cobra.Command, args []string) {
+	if targetBoard == "" {
+		cmd.Println("No board target provided. Aborting")
+		os.Exit(1)
 	}
 
 	dumpFolder := "dump/sfx/"
-	err := os.RemoveAll(dumpFolder)
-	//if err != nil {
-	//	println("Unable to delete dump folder ", dumpFolder)
-	//	os.Exit(1)
-	//}
-	err = os.MkdirAll(dumpFolder, 0777)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to create SFX dump folder '%s' : '%s'", dumpFolder, err.Error()))
+	if err := os.RemoveAll(dumpFolder); err != nil {
+		cmd.Println("Unable to delete dump folder", dumpFolder)
+		os.Exit(1)
+	}
+	if err := os.MkdirAll(dumpFolder, 0777); err != nil {
+		cmd.Printf("Unable to create SFX dump folder '%s' : '%s'\n", dumpFolder, err.Error())
+		os.Exit(1)
 	}
 
-	board := boards.Get(*boardName)
+	board := boards.Get(targetBoard)
 
 	// Read the full ROM
 	rom := make([]byte, board.Oki.Size)
@@ -52,19 +44,19 @@ func dumpSFX(args []string) {
 
 	// Parse and output wav
 	okiRom := oki.OpenOKI(rom)
-	if *verbose {
-		println(fmt.Sprintf("Found %d phrases", len(okiRom.Phrases)))
+	if verbose {
+		cmd.Printf("Found %d phrases\n", len(okiRom.Phrases))
 	}
 	for i, phrase := range okiRom.Phrases {
-		if *verbose {
-			println(fmt.Sprintf("   Entry %d is %d bytes", i, len(phrase)))
+		if verbose {
+			cmd.Printf("   Entry %d is %d bytes\n", i, len(phrase))
 		}
 		pcm := oki.ADPCMToPCM(phrase)
-		writeWav(fmt.Sprintf("%s%03d.wav", dumpFolder, i), pcm)
+		writeWav(cmd, fmt.Sprintf("%s%03d.wav", dumpFolder, i), pcm)
 	}
 }
 
-func writeWav(path string, pcm []int16) {
+func writeWav(cmd *cobra.Command, path string, pcm []int16) {
 	const wavHeaderSize = 0
 	wav := make([]byte, wavHeaderSize+len(pcm)*2)
 
@@ -91,7 +83,8 @@ func writeWav(path string, pcm []int16) {
 
 	err := os.WriteFile(path, wav, 0644)
 	if err != nil {
-		panic(fmt.Sprintf("Unable to write wav file at '%s'", path))
+		cmd.Printf("Unable to write wav file at '%s'\n", path)
+		os.Exit(1)
 	}
 }
 

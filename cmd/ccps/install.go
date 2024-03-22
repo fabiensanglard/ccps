@@ -1,40 +1,29 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"log"
 	"os"
-	"strings"
+	"path"
 
 	"github.com/fabiensanglard/ccps/sites"
+	"github.com/spf13/cobra"
 )
 
-func install(args []string) {
-	fs := flag.NewFlagSet("install", flag.ExitOnError)
-	v := fs.Bool("v", false, "Verbose mode")
-	dir := fs.String("d", "", "Destination directory")
-	if err := fs.Parse(args); err != nil {
-		panic(fmt.Sprintf("Cmd parsing error '%s'", err))
-	}
+func install(cmd *cobra.Command, args []string) {
 
-	outDir := *dir
-	if len(outDir) == 0 {
-		panic("Usage: ccps install -d DIRECTORY")
-	}
-	verbose := *v
-	if !strings.HasSuffix(outDir, "/") {
-		outDir = outDir + "/"
+	if installDestDir == "" {
+		cmd.Println("missing destination directory")
+		os.Exit(1)
 	}
 
 	srcDir := sites.OutDir
 	files, err := os.ReadDir(srcDir)
 	if err != nil {
-		log.Fatal(err)
+		cmd.PrintErr(err)
+		os.Exit(1)
 	}
 
 	if verbose {
-		println("Installing:")
+		cmd.Println("Installing:")
 	}
 
 	for _, file := range files {
@@ -42,14 +31,14 @@ func install(args []string) {
 			continue
 		}
 
-		src := srcDir + file.Name()
-		dst := outDir + file.Name()
+		src := path.Join(srcDir, file.Name())
+		dst := path.Join(installDestDir, file.Name())
 		if verbose {
-			println("Moving image '", src, "' -> '", dst, "'")
+			cmd.Println("Moving image '", src, "' -> '", dst, "'")
 		}
-		err := os.Rename(src, dst)
-		if err != nil {
-			panic(fmt.Sprintf("Unable to move '%s' to '%s': '%s'", src, dst, err.Error()))
+		if err := os.Rename(src, dst); err != nil {
+			cmd.Printf("Unable to move '%s' to '%s': '%s'\n", src, dst, err.Error())
+			os.Exit(1)
 		}
 	}
 }
